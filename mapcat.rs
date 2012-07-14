@@ -1,5 +1,3 @@
-use mine;
-
 import io::{file_reader,reader_util,writer_util,stdout};
 
 fn main(argv: ~[str]) {

@@ -1,12 +1,13 @@
 import option::{option,none,some};
 
-type coord = u16;
+type coord = i16;
+type length = u16;
 type area = u32;
 type dist = area;
 type score = i64;
 
 type point = { x: coord, y: coord };
-type rect = { x: coord, y: coord, w: coord, h: coord };
+type rect = { x: coord, y: coord, w: length, h: length };
 
 enum space {
     robot, wall, rock, lambda, 
@@ -33,17 +34,15 @@ fn step(state: state, cmd: cmd) -> state {
 */
 
 fn print(state: state) -> ~[str] {
-    pure fn primg(&&_env: (), img: mine_image) -> ~[str] {
+    assert(state.mine.get(state.rloc) == robot);
+    (do state.mine.read |img| {
         let n = img.len();
         do vec::from_fn(n) |i| {
             str::from_chars(img[n - 1 - i].map(|s| char_of_space(s)))
         }
-    }
-    assert(state.mine.get(state.rloc) == robot);
-    (state.mine.read(primg, ()))
-    + ~["", 
-        #fmt("Time %u", state.time as uint),
-        #fmt("Lambdas %u/%u", state.lgot as uint, state.lrem as uint)]
+    }) + ~["", 
+           #fmt("Time %u", state.time as uint),
+           #fmt("Lambdas %u/%u", state.lgot as uint, state.lrem as uint)]
 }
 
 fn parse(lines: ~[str]) -> state {
@@ -80,10 +79,7 @@ fn parse(lines: ~[str]) -> state {
      time: 0,
      lgot: 0,
      lrem: lrem,
-     touched: {x: 0, y: 0,
-               w: img[0].len() as coord,
-               h: img.len() as coord}
-    }
+     touched: img.box()}
 }
     
 
@@ -97,18 +93,26 @@ enum mine_repr {
 }
 
 impl geom for mine_image {
-    pure fn get(p: point) -> space { let {x, y} = p; ret self[y][x] }
+    pure fn get(p: point) -> space { let {x, y} = p; self[y][x] }
+    pure fn box() -> rect {
+        {x: 0, y: 0, 
+         w: self[0].len() as length,
+         h: self.len() as length}
+    }
 }
 
 fn new_mine(+image : mine_image) -> mine { @{ mut repr: root(image) } }
 
 impl mine for mine {
-    fn read<E, R>(f: pure fn (E, mine_image) -> R, env: E) -> R {
+    fn read<R>(f: fn (&mine_image) -> R) -> R {
         let rval: R;
         self.focus();
-        alt check self.repr {
-          root(img) { rval = f(env, img) }
+        let mut self_repr = under_construction;
+        self_repr <-> self.repr;
+        alt check self_repr {
+          root(img) { rval = f(img) }
         }
+        self.repr <-> self_repr;
         ret rval;
     }
 
@@ -140,7 +144,7 @@ impl mine for mine {
                     let d = diffs[n - 1 - i];
                     {where: d.where, what: img.get(d.where)}
                 };
-                // Can't iterate an impure action over the borrowed diffs.
+                // Cannot iterate an impure action over the borrowed diffs.
                 for uint::range(0, n) |i| {
                     let {where, what} = diffs[i];
                     img[where.y][where.x] = what;
@@ -175,21 +179,33 @@ impl geom for rect {
     }
     pure fn trans(p: point) -> option<point> {
         let q = { x: p.x - self.x, y: p.y - self.y };
-        if q.x < self.w && q.y < self.h { some(q) } else { none }
+        if (q.x as length) < self.w &&
+            (q.y as length) < self.h { some(q) } else { none }
     }
     pure fn +(other: rect) -> rect {
-        let xl = u16::min(self.x, other.x);
-        let yl = u16::min(self.y, other.y);
-        let xh = u16::max(self.x + self.w, other.x + other.w);
-        let yh = u16::max(self.y + self.h, other.y + other.h);
-        { x: xl, y: yl, w: xh - xl, h: yh - yl }
+        let xl = i16::min(self.x, other.x);
+        let yl = i16::min(self.y, other.y);
+        let xh = i16::max(self.x + (self.w as coord),
+                          other.x + (other.w as coord));
+        let yh = i16::max(self.y + (self.h as coord),
+                          other.y + (other.h as coord));
+        { x: xl, y: yl, w: (xh - xl) as length, h: (yh - yl) as length }
+    }
+    pure fn *(other: rect) -> rect {
+        let xl = i16::max(self.x, other.x);
+        let yl = i16::max(self.y, other.y);
+        let xh = i16::min(self.x + (self.w as coord),
+                          other.x + (other.w as coord));
+        let yh = i16::min(self.y + (self.h as coord),
+                          other.y + (other.h as coord));
+        { x: xl, y: yl, w: (xh - xl) as length, h: (yh - yl) as length }
     }
     pure fn grow(t: coord, r: coord, b: coord, l: coord) -> rect {
         // Parameter order stolen from CSS; blame them.
         {x: self.x - l,
          y: self.y - b,
-         w: self.w + l + r,
-         h: self.h + t + b}
+         w: self.w + ((l + r) as length),
+         h: self.h + ((t + b) as length)}
     }
 }
 
