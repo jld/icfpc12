@@ -13,6 +13,9 @@ enum space {
     closed_lift, open_lift, earth, empty
 }
 
+enum dir { left, right, up, down }
+enum cmd { move(dir), wait, abort }
+
 type state = {
     mine: mine,
     robot: point,
@@ -22,6 +25,45 @@ type state = {
     remaining: area,
     touched: rect
 };
+
+fn parse(lines : ~[str]) -> mine_image {
+    let mut maxlen = 0;
+    let mut rows = ~[];
+    let mut metaline = 0;
+    
+    for lines.eachi |i, line| {
+        metaline = i + 1;
+        if line == "" { break; }
+        maxlen = uint::max(maxlen, line.len());
+        let row = vec::to_mut(str::chars(line).map(|c| space_of_char(c)));
+        vec::unshift(rows, row);
+    }
+    rows = do vec::map_consume(rows) |+line| {
+        if line.len() == maxlen { line }
+        else { line + vec::from_elem(maxlen - line.len(), empty) }
+    };
+}
+
+fn make(lines : ~[str]) -> state {
+    let img = parse(lines);
+    let mine = make_mine(img);
+    let mut robot = none;
+    let mut remaining = 0;
+    do lines.iteri |y,line| {
+        do line.iteri |x,cell| {
+            alt cell {
+              robot { robot = some({ y, x }) }
+              lambda { remaining += 1 }
+            }
+        }
+    }
+    let robot = option::get(robot);
+    let touched = {x: 0, y: 0, w: img[0].len(), h: img.len() };
+
+    { mine, robot, score: 0, time: 0, collected: 0, remaining, touched }
+}
+
+    
 
 type mine = @{ mut repr: mine_repr };
 type mine_image = ~[~[mut space]];
@@ -35,6 +77,8 @@ enum mine_repr {
 impl geom for mine_image {
     pure fn get(p: point) -> space { let {x, y} = p; ret self[y][x] }
 }
+
+fn new_mine(+image : mine_image) -> mine { @{ mut repr: root(image) } }
 
 impl mine for mine {
     fn read<R>(f: pure fn (mine_image) -> R) -> R {
@@ -89,28 +133,19 @@ impl mine for mine {
     }
 }
 
-/*
-
-fn make_mine(lines : ~[str]) -> mine {
-    let height = lines.len() as coord;
-    if height as uint != lines.len() { fail }
-    let maxlen = lines.map(|line|line.len()).max();
-    let width = maxlen as coord;
-    if width as uint != maxlen { fail }
-
-    let padded = vec::to_mut(do lines.map |line| {
-        let line = str::chars(line);
-        line + vec::from_elem(maxlen - line.len(), ' ')
-    });
-    vec::reverse(padded);
-    let grid = do padded.map |line| {
-        line.map(|c|space_of_char(c))
-    };
-
-    let bounds = { xl: 0, xh: width, yl: 0, yh: height };
-    composite(bounds, grid, walls)
+impl geom for mine {
+    fn get(p: point) {
+        alt check self.repr {
+          root(img) { img.get(p) }
+          diff(diffs, other) {
+            alt vec::rfind(diffs, |d|d.where == p) {
+              some(d) { d.what }
+              none { other.get(p) }
+            }
+          }
+        }
+    }
 }
-*/
 
 impl geom for rect {
     pure fn area() -> area {
@@ -168,3 +203,26 @@ fn char_of_space(s: space) -> char {
       empty { ' ' }
     }
 }
+
+fn cmd_of_char(c: char) -> cmd {
+    alt c {
+      'L' { move(left) }
+      'R' { move(right) }
+      'U' { move(up) }
+      'D' { move(down) }
+      'W' { wait }
+      'A' { abort }
+    }
+}
+
+fn char_of_cmd(c: cmd) -> char {
+    alt c {
+      move(left) { 'L' }
+      move(right) { 'R' }
+      move(up) { 'U' }
+      move(down) { 'D' }
+      wait { 'W' }
+      abort { 'A' }
+    }
+}
+
