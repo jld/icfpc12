@@ -1,3 +1,5 @@
+import option::{option,none,some};
+
 type coord = u16;
 type area = u32;
 type dist = area;
@@ -109,36 +111,36 @@ fn make_mine(lines : ~[str]) -> mine {
     composite(bounds, grid, walls)
 }
 */
-/*
+
 impl geom for rect {
-    fn area() -> u32 {
-        assert(self.xh >= self.xl);
-        assert(self.yh >= self.yl);
-        let w = (self.xh - self.xl) as u32;
-        let h = (self.yh - self.yl) as u32;
-        ret w * h;
+    pure fn area() -> area {
+        ret (self.w as area) * (self.h as area);
     }
-    fn tr_in(p: point) -> point {
-        assert(p.x >= self.xl);
-        assert(p.y >= self.yl);
-        assert(p.x < self.xh);
-        assert(p.y < self.yh);
-        { x: p.x - self.xl, y: p.y - self.yl }
+    pure fn trans(p: point) -> option<point> {
+        let q = { x: p.x - self.x, y: p.y - self.y };
+        if q.x < self.w && q.y < self.h { some(q) } else { none }
     }
-    fn tr_out(p: point) -> point {
-        let q = { x: p.x + self.xl, y: p.y + self.yl };
-        assert(q.x >= self.xl);
-        assert(q.y >= self.yl);
-        assert(q.x < self.xh);
-        assert(q.y < self.yh);        
-        ret q
+    pure fn +(other: rect) -> rect {
+        let xl = u16::min(self.x, other.x);
+        let yl = u16::min(self.y, other.y);
+        let xh = u16::max(self.x + self.w, other.x + other.w);
+        let yh = u16::max(self.y + self.h, other.y + other.h);
+        { x: xl, y: yl, w: xh - xl, h: yh - yl }
     }
-    fn contains(p: point) -> bool {
-        ret (p.x >= self.xl && p.x < self.xh &&
-             p.y >= self.yl && p.y < self.yh);
+    pure fn grow(t: coord, r: coord, b: coord, l: coord) -> rect {
+        // Parameter order stolen from CSS; blame them.
+        {x: self.x - l,
+         y: self.y - b,
+         w: self.w + l + r,
+         h: self.h + t + b}
     }
 }
-*/
+
+impl geom for point {
+    pure fn box() -> rect {
+        { x: self.x, y: self.y, w: 1, h: 1 }
+    }
+}
 
 fn space_of_char(c: char) -> space { 
     alt c {
