@@ -4,7 +4,7 @@ type dist = area;
 type score = i64;
 
 type point = { x: coord, y: coord };
-type rect = { xl: coord, xh: coord, yl: coord, yh:coord };
+type rect = { x: coord, y: coord, w: coord, h: coord };
 
 enum space {
     robot, wall, rock, lambda, 
@@ -13,35 +13,81 @@ enum space {
 
 type state = {
     mine: mine,
-    robot: coord,
+    robot: point,
     score: score,
-    lambdas: area,
+    time: area,
+    collected: area,
+    remaining: area,
     touched: rect
 };
 
-type grid = ~[~[space]];
-enum mine { walls, overlay(rect, grid, @mine) }
+type mine = @{ mut repr: mine_repr };
+type mine_image = ~[~[mut space]];
+type mine_change = ~[{where: point, what: space}];
+enum mine_repr {
+    root(mine_image),
+    diff(mine_change, mine),
+    under_construction
+}
 
-fn composite(r: rect, +g: grid, +back: mine) -> mine {
-    // TODO: compact
-    overlay(r, g, @back)
+impl geom for mine_image {
+    pure fn get(p: point) -> space { let {x, y} = p; ret self[y][x] }
 }
 
 impl mine for mine {
-    fn get(p: point) -> space {
-        alt self {
-          walls { wall }
-          overlay(r, g, back) {
-            if r.contains(p) { 
-                let q = r.tr_in(p);
-                g[q.y][q.x]
-            } else {
-                (*back).get(p)
+    fn read<R>(f: pure fn (mine_image) -> R) -> R {
+        let rval: R;
+        self.focus();
+        alt check self.repr {
+          root(img) { rval = f(img) }
+        }
+        ret rval;
+    }
+
+    fn edit(+ch: mine_change) -> mine { 
+        @{ mut repr: diff(ch, self) }
+    }
+
+    fn focus() {
+        alt check self.repr { 
+          root(*) { ret }
+          diff(*) { }
+        }
+        let mut diff_repr = under_construction;
+        let mut root_repr = under_construction;
+        let rdiff_repr: mine_repr;
+        let other: mine;
+        diff_repr <-> self.repr;
+        alt check diff_repr {
+          diff(diffs, d_other) { 
+            other = d_other;
+            other.focus();
+            root_repr <-> other.repr;
+            alt check root_repr {
+              root(img) {
+                let n = diffs.len();
+                // Yes, we have no rev_map.
+                // Also, in principle this could reuse the old vector.
+                let rdiffs = do vec::from_fn(n) |i| {
+                    let d = diffs[n - 1 - i];
+                    {where: d.where, what: img.get(d.where)}
+                };
+                // Can't iterate an impure action over the borrowed diffs.
+                for uint::range(0, n) |i| {
+                    let {where, what} = diffs[i];
+                    img[where.y][where.x] = what;
+                }
+                rdiff_repr = diff(rdiffs, self);
+              }
             }
           }
         }
+        self.repr <- root_repr;
+        other.repr <- rdiff_repr;
     }
 }
+
+/*
 
 fn make_mine(lines : ~[str]) -> mine {
     let height = lines.len() as coord;
@@ -62,7 +108,8 @@ fn make_mine(lines : ~[str]) -> mine {
     let bounds = { xl: 0, xh: width, yl: 0, yh: height };
     composite(bounds, grid, walls)
 }
-
+*/
+/*
 impl geom for rect {
     fn area() -> u32 {
         assert(self.xh >= self.xl);
@@ -91,7 +138,7 @@ impl geom for rect {
              p.y >= self.yl && p.y < self.yh);
     }
 }
-
+*/
 
 fn space_of_char(c: char) -> space { 
     alt c {
