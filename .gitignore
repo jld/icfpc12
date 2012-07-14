@@ -2,6 +2,8 @@
 data
 *.o
 *.so
+*.a
 test*
 mapcat
 maprun
+sigtest
