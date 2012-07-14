@@ -1,0 +1,50 @@
+Useful property: local state depends on a radius-n ball
+(up/left/right) from t turns ago; e.g., can quickly check if a move
+would result in robot squish.  Not quite as helpful for efficient map
+storage, as arbitrarily much stuff can be in motion at once.
+
+Problem: global properties matter; see, e.g., example 6.  Arbitrarily
+complex falling rock stuff can break -- or make -- connectivity.  Can
+track blame per-square for board state, but a little worried about
+space consumption.
+
+Further problem: how do we tell when we've broken lambda paths?  Could
+keep shortest-path state, erase stuff leading out of a new rock, then
+recompute at blank spaces & fixpoint.  Again, storage (although the
+incremental rebuild would also work backwards).
+
+
+Temptation: try to breed GAs to pattern-recognize this stuff.  Could
+do more than just blind feedback -- monitor what happened when and be
+more Lamarckian.  This has the benefit of being more fun than trying
+to write a better Astar or whatever than people who work for Google.
+
+Subproblem: what primitives to give them?  They need to be cheap, but
+burning time stumbling around wildly is also not helpful.  Maybe I'll
+give them undo as an action; let them run for some number of moves and
+keep the least bad ending.
+
+Strategic undo: How to find a useful implication point to back up to?
+Don't want to keep bumbling around in a broad delta of suck.  Could
+try to pattern-recognize checkpoints and undo points.
+
+Metagame: am I hoping to run some evolution in response to the map?  I
+think so.
+
+Pattern idea:
+  simple = [offset -> spacepred]
+  fancy = simple | simple * (offsetnz * simple) * fancy
+
+Want something that can recognize repeating patterns in one shot --
+e.g., can we get out from under this rock shelf, or is it death?  On
+the other hand, if we have a powerful enough undo, trying to
+approximate the future like that might be more trouble than it's worth.
+
+The important goal here, really, is to have something that's amenable
+to mutation, and, especially, crossover.  (Let's not repeat 2003's
+mistakes.)  
+
+Now, the extra-fun question: will I ever want instant redo?  I'm
+thinking the answer is "why not?"  (The other answer is that doing
+reversible diff lists is being a "fun" way to learn how to use Rust's
+region/typestate system.)
