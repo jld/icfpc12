@@ -18,15 +18,35 @@ enum cmd { move(dir), wait, abort }
 
 type state = {
     mine: mine,
-    robot: point,
-    score: score,
+    rloc: point,
     time: area,
-    collected: area,
-    remaining: area,
+    lgot: area,
+    lrem: area,
     touched: rect
 };
 
-fn parse(lines : ~[str]) -> mine_image {
+/*
+fn step(state: state, cmd: cmd) -> state {
+    let {mine, rloc, time, lgot, lrem, touched} = state;
+    
+}
+*/
+
+fn print(state: state) -> ~[str] {
+    pure fn primg(&&_env: (), img: mine_image) -> ~[str] {
+        let n = img.len();
+        do vec::from_fn(n) |i| {
+            str::from_chars(img[n - 1 - i].map(|s| char_of_space(s)))
+        }
+    }
+    assert(state.mine.get(state.rloc) == robot);
+    (state.mine.read(primg, ()))
+    + ~["", 
+        #fmt("Time %u", state.time as uint),
+        #fmt("Lambdas %u/%u", state.lgot as uint, state.lrem as uint)]
+}
+
+fn parse(lines: ~[str]) -> state {
     let mut maxlen = 0;
     let mut rows = ~[];
     let mut metaline = 0;
@@ -38,31 +58,33 @@ fn parse(lines : ~[str]) -> mine_image {
         let row = vec::to_mut(str::chars(line).map(|c| space_of_char(c)));
         vec::unshift(rows, row);
     }
-    rows = do vec::map_consume(rows) |+line| {
+    let img = do vec::map_consume(rows) |+line| {
         if line.len() == maxlen { line }
         else { line + vec::from_elem(maxlen - line.len(), empty) }
     };
-}
 
-fn make(lines : ~[str]) -> state {
-    let img = parse(lines);
-    let mine = make_mine(img);
-    let mut robot = none;
-    let mut remaining = 0;
-    do lines.iteri |y,line| {
+    let mut rloc = none;
+    let mut lrem = 0;
+    do img.iteri |y,line| {
         do line.iteri |x,cell| {
             alt cell {
-              robot { robot = some({ y, x }) }
-              lambda { remaining += 1 }
+              robot { rloc = some({x: x as coord, y: y as coord}) }
+              lambda { lrem += 1 }
+              _ { }
             }
         }
     }
-    let robot = option::get(robot);
-    let touched = {x: 0, y: 0, w: img[0].len(), h: img.len() };
 
-    { mine, robot, score: 0, time: 0, collected: 0, remaining, touched }
+    {mine: new_mine(copy img),
+     rloc: option::get(rloc),
+     time: 0,
+     lgot: 0,
+     lrem: lrem,
+     touched: {x: 0, y: 0,
+               w: img[0].len() as coord,
+               h: img.len() as coord}
+    }
 }
-
     
 
 type mine = @{ mut repr: mine_repr };
@@ -81,11 +103,11 @@ impl geom for mine_image {
 fn new_mine(+image : mine_image) -> mine { @{ mut repr: root(image) } }
 
 impl mine for mine {
-    fn read<R>(f: pure fn (mine_image) -> R) -> R {
+    fn read<E, R>(f: pure fn (E, mine_image) -> R, env: E) -> R {
         let rval: R;
         self.focus();
         alt check self.repr {
-          root(img) { rval = f(img) }
+          root(img) { rval = f(env, img) }
         }
         ret rval;
     }
@@ -134,7 +156,7 @@ impl mine for mine {
 }
 
 impl geom for mine {
-    fn get(p: point) {
+    pure fn get(p: point) -> space {
         alt check self.repr {
           root(img) { img.get(p) }
           diff(diffs, other) {
@@ -177,7 +199,7 @@ impl geom for point {
     }
 }
 
-fn space_of_char(c: char) -> space { 
+pure fn space_of_char(c: char) -> space { 
     alt c {
       'R' { robot }
       '#' { wall }
@@ -191,7 +213,7 @@ fn space_of_char(c: char) -> space {
     }
 }
 
-fn char_of_space(s: space) -> char {
+pure fn char_of_space(s: space) -> char {
     alt s {
       robot { 'R' }
       wall { '#' }
@@ -204,7 +226,7 @@ fn char_of_space(s: space) -> char {
     }
 }
 
-fn cmd_of_char(c: char) -> cmd {
+pure fn cmd_of_char(c: char) -> cmd {
     alt c {
       'L' { move(left) }
       'R' { move(right) }
@@ -212,10 +234,11 @@ fn cmd_of_char(c: char) -> cmd {
       'D' { move(down) }
       'W' { wait }
       'A' { abort }
+      _ { fail }
     }
 }
 
-fn char_of_cmd(c: cmd) -> char {
+pure fn char_of_cmd(c: cmd) -> char {
     alt c {
       move(left) { 'L' }
       move(right) { 'R' }

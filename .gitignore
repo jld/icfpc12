@@ -2,3 +2,5 @@
 data
 *.o
 *.so
+test*
+mapcat
