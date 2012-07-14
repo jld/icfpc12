@@ -63,6 +63,7 @@ impl state for state {
         let airspace = self.rloc.step(up);
         ret self.mine.get(airspace) == rock && vec::contains(bonk, airspace);
     }
+    fn print() -> ~[str] { print(self) }
 }
 
 fn step(state: state, cmd: cmd) -> (result, state) {
@@ -70,7 +71,7 @@ fn step(state: state, cmd: cmd) -> (result, state) {
     let mut aborting = false;
     let mut completing = false;
     let mut collected = false;
-    
+
     // 2.2 Robot Movement
     assert(state.mine.get(state.rloc) == robot);
     alt cmd {
