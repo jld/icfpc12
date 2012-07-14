@@ -2,10 +2,10 @@ type coord = i16;
 type length = u16;
 type area = u32;
 type dist = area;
-type score = i64;
 
 type point = { x: coord, y: coord };
 type rect = { x: coord, y: coord, w: length, h: length };
+enum dir { left, right, up, down }
 
 impl geom for rect {
     pure fn area() -> area {
@@ -15,6 +15,9 @@ impl geom for rect {
         let q = { x: p.x - self.x, y: p.y - self.y };
         if (q.x as length) < self.w &&
             (q.y as length) < self.h { some(q) } else { none }
+    }
+    pure fn contains(p : point) -> bool {
+        self.trans(p) != none
     }
     pure fn +(other: rect) -> rect {
         let xl = i16::min(self.x, other.x);
@@ -41,11 +44,35 @@ impl geom for rect {
          w: self.w + ((l + r) as length),
          h: self.h + ((t + b) as length)}
     }
+    fn iter_x(f: fn(coord)) {
+        let mut x = self.x;
+        let xh = self.x + (self.w as coord);
+        while x != xh { f(x); x += 1; }
+    }
+    fn iter_y(f: fn(coord)) {
+        let mut y = self.y;
+        let yh = self.y + (self.h as coord);
+        while y != yh { f(y); y += 1; }
+    }
+    fn iter(f: fn(point)) {
+        do self.iter_y |y| {
+            do self.iter_x |x| {
+                f({ x: x, y: y })
+            }
+        }
+    }
 }
 
 impl geom for point {
     pure fn box() -> rect {
         { x: self.x, y: self.y, w: 1, h: 1 }
     }
+    pure fn step(d : dir) -> point {
+        alt d {
+          left  {{ x: self.x - 1 with self }}
+          right {{ x: self.x + 1 with self }}
+          up    {{ y: self.y + 1 with self }}
+          down  {{ y: self.y - 1 with self }}
+        }
+    }
 }
-

@@ -10,7 +10,8 @@ fn print(mine: mine) -> ~[str] {
     do mine.read |img| {
         let n = img.len();
         do vec::from_fn(n) |i| {
-            str::from_chars(img[n - 1 - i].map(|s| char_of_space(s)))
+            str::from_chars(img[n - 1 - i]
+                            .map(|s| char_of_space(space_show_(s))))
         }
     }
 }
@@ -24,28 +25,37 @@ fn parse(lines: &[str]) -> (mine_image, &[str]) {
         metaline = i + 1;
         if line == "" { break; }
         maxlen = uint::max(maxlen, line.len());
-        let row = vec::to_mut(str::chars(line).map(|c| space_of_char(c)));
+        let row = vec::to_mut(str::chars(line)
+                              .map(|c| space_hide_(space_of_char(c))));
         vec::unshift(rows, row);
     }
     let img = do vec::map_consume(rows) |+line| {
         if line.len() == maxlen { line }
-        else { line + vec::from_elem(maxlen - line.len(), empty) }
+        else { line + vec::from_elem(maxlen - line.len(), space_hide_(empty)) }
     };
     ret (img, vec::view(lines, metaline, lines.len()))
 }
-    
+
 
 type mine = @{ mut repr: mine_repr };
-type mine_image = ~[~[mut space]];
+type mine_image = ~[~[mut space_]];
 type mine_change = ~[{where: point, what: space}];
+type mine_change_ = ~[{where: point, what_: space_}];
 enum mine_repr {
     root(mine_image),
-    diff(mine_change, mine),
+    diff(mine_change_, mine),
     under_construction
 }
 
 impl geom for mine_image {
-    pure fn get(p: point) -> space { let {x, y} = p; self[y][x] }
+    pure fn get(p: point) -> space { 
+        if self.box().contains(p) {
+            let {x, y} = p;
+            space_show_(self[y][x])
+        } else {
+            wall
+        }
+    }
     pure fn box() -> rect {
         {x: 0, y: 0, 
          w: self[0].len() as length,
@@ -68,8 +78,11 @@ impl mine for mine {
         ret rval;
     }
 
-    fn edit(+ch: mine_change) -> mine { 
-        @{ mut repr: diff(ch, self) }
+    fn edit(+ch: mine_change) -> mine {
+        let ch_ = do vec::map_consume(ch) |+ww| {
+            { where: ww.where, what_: space_hide_(ww.what) }
+        };
+        @{ mut repr: diff(ch_, self) }
     }
 
     fn focus() {
@@ -94,12 +107,12 @@ impl mine for mine {
                 // Also, in principle this could reuse the old vector.
                 let rdiffs = do vec::from_fn(n) |i| {
                     let d = diffs[n - 1 - i];
-                    {where: d.where, what: img.get(d.where)}
+                    {where: d.where, what_: img[d.where.y][d.where.x]}
                 };
                 // Cannot iterate an impure action over the borrowed diffs.
                 for uint::range(0, n) |i| {
-                    let {where, what} = diffs[i];
-                    img[where.y][where.x] = what;
+                    let {where, what_} = diffs[i];
+                    img[where.y][where.x] = what_;
                 }
                 rdiff_repr = diff(rdiffs, self);
               }
@@ -117,7 +130,7 @@ impl geom for mine {
           root(img) { img.get(p) }
           diff(diffs, other) {
             alt vec::rfind(diffs, |d|d.where == p) {
-              some(d) { d.what }
+              some(d) { space_show_(d.what_) }
               none { other.get(p) }
             }
           }
@@ -149,6 +162,22 @@ pure fn char_of_space(s: space) -> char {
       open_lift { 'O' }
       earth { '.' }
       empty { ' ' }
+    }
+}
+
+enum space_ = u8;
+
+pure fn space_hide_(s : space) -> space_ {
+    space_(alt (s) {
+        robot { 0 } wall { 1 } rock { 2 } lambda { 3 }
+        closed_lift { 4 } open_lift { 5 } earth { 6 } empty { 7 }
+    })
+}
+
+pure fn space_show_(s : space_) -> space {
+    alt check *s {
+      0 { robot } 1 { wall } 2 { rock } 3 { lambda }
+      4 { closed_lift } 5 { open_lift } 6 { earth } 7 { empty }
     }
 }
 
