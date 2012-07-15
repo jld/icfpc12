@@ -132,7 +132,7 @@ fn step(state: state, cmd: cmd) -> (result, state) {
             }
         }
     }
-    if collected && state.lrem == 0 {
+    if (collected || state.lgot == 0) && state.lrem == 0 {
         do state.mine.read |img| {
             do img.box().iter |here| {
                 if img.get(here) == closed_lift {
