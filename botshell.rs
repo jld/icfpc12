@@ -1,11 +1,14 @@
 use std;
-import state::{state, result, cont, died, won, cmd, move, wait, score};
+import state::{state, outcome, cont, died, won, cmd, move, wait, score};
 import geom::{left, down, up, right};
 import std::list;
 import std::list::{list, nil, cons};
+import result::{result, ok, err};
 
-type posn = { state: state, result: result, trail: @list<cmd> };
-type shell = { mut hiscore: score, mut best: posn };
+type posn = { state: state, outcome: outcome, trail: @list<cmd>, score: score };
+type shell = { mut best: posn };
+enum stop { timeout }
+type res<T> = result<T, stop>;
 
 impl stuff for posn {
     fn to_str() -> str {
@@ -27,27 +30,27 @@ fn start(state: state) -> (shell,posn) {
     assert(state.time == 0);
     sigwrap::enable(sigwrap::SIGINT);
     sigwrap::enable(sigwrap::SIGALRM);
-    let posn = { state: state, result: cont, trail: @nil };
-    ret ({ mut hiscore: 0, mut best: posn }, posn)
+    let posn = { state: state, outcome: cont, trail: @nil, score: 0 };
+    ret ({ mut best: posn }, posn)
 }
 
 impl stuff for shell {
-    fn step(posn: posn, cmd: cmd) -> option<posn> {
+    fn step(posn: posn, cmd: cmd) -> res<posn> {
         if sigwrap::get() {
             io::println((copy self.best).to_str());
-            none
+            err(timeout)
         } else {
             let (res, state) = posn.state.step(cmd);
             let score = state.score(alt res { cont { none } r { some(r) } });
             let retv = {state: state,
-                        result: res,
-                        trail: @cons(cmd, posn.trail)};
-            if score > self.hiscore {
+                        outcome: res,
+                        trail: @cons(cmd, posn.trail),
+                        score: score};
+            if score > self.best.score {
                 #info("Score: %?; Trail: %s", score, retv.to_str());
-                self.hiscore = score;
                 self.best = copy retv;
             }
-            some(retv)
+            ok(retv)
         }
     }
     fn finish() {

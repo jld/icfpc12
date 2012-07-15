@@ -1,11 +1,11 @@
 use std;
 import io::{reader,reader_util,writer_util};
-import state::{state, result, cont, died, won, cmd, move, wait};
+import state::{state, outcome, cont, died, won, cmd, move, wait};
 import geom::{left, down, up, right};
 import std::{map, sort};
 import std::map::hashmap;
 
-type posn = @{ state: state, res: result, last: hist };
+type posn = @{ state: state, res: outcome, last: hist };
 enum hist {
     initial,
     from(cmd, posn)

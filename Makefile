@@ -4,6 +4,7 @@ RUSTCFLAGS=-O
 
 STUFF=state.rs mine.rs geom.rs
 
+evobot: libcstuff.a botshell.rs $(STUFF)
 randbot: libcstuff.a botshell.rs $(STUFF)
 rlrun: libcstuff.a termstuff.rs $(STUFF)
 maprun: $(STUFF)

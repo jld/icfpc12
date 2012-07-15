@@ -1,8 +1,9 @@
 use std;
 import io::{reader,reader_util,writer_util};
-import state::{state, result, cont, died, won, cmd, move, wait};
+import state::{state, outcome, cont, died, won, cmd, move, wait};
 import geom::{left, down, up, right};
 import botshell::stuff;
+import result::{result, ok, err};
 
 fn get_map(-fh: reader) -> state {
     let mut lines = ~[];
@@ -41,7 +42,7 @@ fn main(argv: ~[str]) {
         let chosen = rng.gen_uint_range(0, bagsize);
         let chosen = if chosen >= bag.len() { 0 } else { chosen };
         let pos = bag[chosen];
-        assert(pos.result == cont);
+        assert(pos.outcome == cont);
         let mut tl = 0;
         for uint::range(0, cmds.len()) |i| {
             let cmd = cmds[i];
@@ -67,9 +68,9 @@ fn main(argv: ~[str]) {
             }
         }
         alt shell.step(pos, option::get(ocmd)) {
-          none { break }
-          some(npos) {
-            if npos.result == cont {
+          err(_) { break }
+          ok(npos) {
+            if npos.outcome == cont {
                 if bag.len() - 1 < bagsize {
                     bag += ~[npos];
                 } else {

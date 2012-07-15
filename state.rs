@@ -15,7 +15,7 @@ type state = {
     rollrect: rect
 };
 
-enum result {
+enum outcome {
     cont,
     died,
     won
@@ -47,13 +47,13 @@ pure fn rock_change(img: mine_image, here: point) -> option<point> {
 }
 
 impl state for state {
-    fn step(cmd: cmd) -> (result, state) {
+    fn step(cmd: cmd) -> (outcome, state) {
         step(self, cmd)
     }
-    pure fn score(result: option<result>) -> score {
+    pure fn score(outcome: option<outcome>) -> score {
         let lgot = self.lgot as score;
         let base = 25 * lgot - (self.time as score);
-        alt result {
+        alt outcome {
           none { base + 25 * lgot }
           some(won) { base + 50 * lgot }
           _ { base }
@@ -84,7 +84,7 @@ impl state for state {
     }
 }
 
-fn step(state: state, cmd: cmd) -> (result, state) {
+fn step(state: state, cmd: cmd) -> (outcome, state) {
     let mut state = { time: state.time + 1 with state };
     let mut completing = false;
     let mut collected = false;

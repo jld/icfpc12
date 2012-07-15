@@ -106,3 +106,13 @@ random; add result to end or replace random not-zero.
 
 Write first: bot shell, that.
 
+====
+
+Agenda for Sunday: make submission work.  Then either the rule
+extensions or the less awful bot.
+
+In particular, selection pressure should be a win all by itself.
+
+====
+
+
