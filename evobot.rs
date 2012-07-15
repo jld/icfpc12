@@ -121,8 +121,15 @@ fn main(argv: ~[str]) {
           err(_) { break }
           ok(none) { again }
           ok(some(desc)) {
-            pool.add(desc, 0.9 + 0.2 * r.gen_float_fast())
+            pool.add(desc, (0.9 + 0.2 * r.gen_float_fast()) * 
+                     (if desc.state.collected { 10. } else { 1. }))
           }
         }
     }
+    /*
+    log(info, pool.vol);
+    for pool.sacs.each |sac| {
+        log(info, (sac.vol, sac.larva.to_str()));
+    }
+    */
 }

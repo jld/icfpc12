@@ -12,7 +12,8 @@ type state = {
     lgot: area,
     lamb: area,
     rolling: area,
-    rollrect: rect
+    rollrect: rect,
+    collected: bool
 };
 
 enum outcome {
@@ -162,7 +163,8 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
         }
     }
     state = {mine: state.mine.edit(edits),
-             rolling: bonk.len() as area, rollrect: nrr
+             rolling: bonk.len() as area, rollrect: nrr,
+             collected: collected
              with state};
     
     // 2.4 Ending Conditions
@@ -203,7 +205,8 @@ fn parse(lines: &[str]) -> state {
      lgot: 0,
      lamb: lamb,
      rolling: rolling,
-     rollrect: img.box()}
+     rollrect: img.box(),
+     collected: false}
 }
 
 pure fn cmd_of_char(c: char) -> cmd {
