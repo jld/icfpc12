@@ -3,6 +3,7 @@ import sigwrap_c::{enable,disable,reset};
 export enable, disable, reset, get;
 export SIGHUP, SIGINT, SIGQUIT, SIGPIPE, SIGALRM, SIGTERM;
 
+#[link_name="cstuff"]
 extern mod sigwrap_c {
     #[link_name="sigwrap_enable"]
     fn enable(sig: c_int);
