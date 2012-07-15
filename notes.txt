@@ -48,3 +48,61 @@ Now, the extra-fun question: will I ever want instant redo?  I'm
 thinking the answer is "why not?"  (The other answer is that doing
 reversible diff lists is being a "fun" way to learn how to use Rust's
 region/typestate system.)
+
+====
+
+Thoughts on the fake-applicative array: would be nice to deforest some
+of those intermediate nodes, especially because there are dead stores
+in them and we might no longer even be keeping all the intermediate
+steps for the real thing.
+
+Fun thing I probably shouldn't try to do and might break everything:
+write an unsafe function to dynamically check a shared box's refcount
+and expose it as a unique/stack box if it's 1.  Sufficient version for
+this: use the refcount in an advisory way.
+
+But also: can compact if things are absolutely small, or if doing so
+makes them not too much larger, or some other heuristic.  This should
+all wait until I have something working, of course.
+
+(Or even: when focusing, collect everything up to the old root, and
+then swap.  That might be a win depending on the usage patterns, but
+it's getting late.)
+
+====
+
+Anyway.  Ideas floating around in my head about a checkpoint cache,
+and casting random paths off of them, and saving them on lambdas and
+maybe randomly otherwise, and giving them decaying utilities and so
+on.  
+
+Collection of checkpoints with max size and sum of weights normalized
+(or virtually normalized by maintaining sum); pick one randomly (by
+weight?)... and then what?  Cast "standard paths"; yields collection
+of new checkpoints.  Obviously want to score up ones that hit lambdas
+(& consider how useful short paths might be), but lambdas followed by
+death is less good.  Can't(?) dump them all into the pot; pick some
+number by lot and add them with their scores, or something.
+
+Consider some level of local search... ah.  If fewer than N available
+points, we'll just add them all and remove the original.  Or, in
+general, if we add k/n of the checkpoints, lower parent's score by
+k/n.  (The root is, of course, outside everything and unremoveable.)
+(May want to memoize checkpoints by string or something; or just not
+care.)
+
+Other things: quick check for whether a move is valid.  Rearrange the
+"touched" to include whether/number rocks moved, to see whether "wait"
+is useful.  (Or the entire point vector, but maybe that's too much
+memory?  And I don't think we actually need that.)
+
+Just single-direction rays, I think.  Ray in same direction as parent
+is almost certainly not useful and could just be skipped.  Ray in
+opposite direction is also probably not useful.  Could just skip
+casting them with high probability.
+
+Lite version: vector of states (posns); pick one and a useful move at
+random; add result to end or replace random not-zero.
+
+Write first: bot shell, that.
+
