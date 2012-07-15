@@ -77,7 +77,7 @@ impl posn for posn {
     }
 }
 
-pure fn char_le(&&a : char, &&b: char) -> bool { a <= b } // ???
+pure fn char_le(&&a: char, &&b: char) -> bool { a <= b } // ???
 
 fn main(argv: ~[str]) {
     termstuff::game_mode(true);

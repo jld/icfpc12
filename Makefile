@@ -3,6 +3,7 @@ RUSTC=rustc
 
 STUFF=state.rs mine.rs geom.rs
 
+randbot: libcstuff.a botshell.rs $(STUFF)
 rlrun: libcstuff.a termstuff.rs $(STUFF)
 maprun: $(STUFF)
 sigtest: libcstuff.a
