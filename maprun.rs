@@ -11,13 +11,20 @@ fn main(argv: ~[str]) {
     loop {
         for state.print().each |line| { out.write_line(line); }
         out.write_line("-- ");
-        let res = alt state::cmd_opt_of_char(in.read_char()) {
-          none { again }
-          some(cmd) {
-            let (res,nstate) = state.step(cmd);
-            state = nstate;
-            res
-          }
+        let ch : char;
+        let res = if in.eof() {
+            aborted
+        } else if {ch = in.read_char(); ch == 'A'} {
+            aborted
+        } else {
+            alt state::cmd_opt_of_char(ch) {
+              none { again }
+              some(cmd) {
+                let (res,nstate) = state.step(cmd);
+                state = nstate;
+                res
+              }
+            }
         };
         if (res != cont) {
             for state.print().each |line| { out.write_line(line); }

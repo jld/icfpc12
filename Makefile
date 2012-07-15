@@ -1,7 +1,10 @@
 RANLIB=ranlib
 RUSTC=rustc
 
+STUFF=state.rs mine.rs geom.rs
+
 sigtest: libsigwrap_c.a
+maprun: maprun.rs $(STUFF)
 
 %: %.rc
 	$(RUSTC) -L . $<

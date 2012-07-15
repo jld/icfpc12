@@ -2,7 +2,7 @@ import option::{option,some,none};
 import geom::*;
 import mine::*;
 
-enum cmd { move(dir), wait, abort }
+enum cmd { move(dir), wait }
 type score = i64;
 
 type state = {
@@ -68,14 +68,12 @@ impl state for state {
 
 fn step(state: state, cmd: cmd) -> (result, state) {
     let mut state = { time: state.time + 1 with state };
-    let mut aborting = false;
     let mut completing = false;
     let mut collected = false;
 
     // 2.2 Robot Movement
     assert(state.mine.get(state.rloc) == robot);
     alt cmd {
-      abort { aborting = true; }
       wait { }
       move(d) {
         let mut edits = ~[];
@@ -150,8 +148,6 @@ fn step(state: state, cmd: cmd) -> (result, state) {
     // 2.4 Ending Conditions
     if completing {
         ret (won, state);
-    } else if aborting {
-        ret (aborted, state);
     } else if state.bonkp(bonk) {
         ret (died, state);
     } else {
@@ -201,7 +197,6 @@ pure fn cmd_opt_of_char(c: char) -> option<cmd> {
       'U' { some(move(up)) }
       'D' { some(move(down)) }
       'W' { some(wait) }
-      'A' { some(abort) }
       _ { none }
     }
 }
@@ -213,8 +208,6 @@ pure fn char_of_cmd(c: cmd) -> char {
       move(up) { 'U' }
       move(down) { 'D' }
       wait { 'W' }
-      abort { 'A' }
     }
 }
-
 
