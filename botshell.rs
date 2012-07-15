@@ -15,6 +15,12 @@ impl stuff for posn {
         }
         str::from_chars(vec::reversed(chars))
     }
+    fn head() -> cmd {
+        alt *self.trail {
+          cons(a,_d) { a }
+          nil { wait }
+        }
+    }
 }
 
 fn start(state: state) -> (shell,posn) {

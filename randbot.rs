@@ -12,6 +12,16 @@ fn get_map(-fh: reader) -> state {
 
 const dfl_baglen : uint = 100;
 
+pure fn opposed(c0: cmd, c1: cmd) -> bool {
+    alt (c0,c1) {
+      (move(left), move(right)) { true }
+      (move(right), move(left)) { true }
+      (move(up), move(down)) { true }
+      (move(down), move(up)) { true }
+      _ { false }
+    }
+}
+
 fn main(argv: ~[str]) {
     let bagsize = if argv.len() > 1 { 
         option::get(uint::from_str(argv[1]))
@@ -33,7 +43,11 @@ fn main(argv: ~[str]) {
         assert(pos.result == cont);
         let mut tl = 0;
         for uint::range(0, cmds.len()) |i| {
-            let weight = if pos.state.useful(cmds[i]) { 1 } else { 0 };
+            let cmd = cmds[i];
+            let weight =
+                if !pos.state.useful(cmd) { 0 } else 
+                if opposed(cmd, pos.head()) { 1 } else
+                if cmd == wait { 5 } else { 10 };
             weights[i] = weight;
             tl += weight;
         }

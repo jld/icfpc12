@@ -10,6 +10,8 @@ fn main(argv: ~[str]) {
     let mut state = state::parse(lines);
     loop {
         for state.print().each |line| { out.write_line(line); }
+        out.write_line(#fmt("Lambdas: %?/%?   Rolling: %?",
+                            state.lgot, state.lamb, state.rolling));
         out.write_line("-- ");
         let ch : char;
         let res = if in.eof() {
@@ -34,7 +36,7 @@ fn main(argv: ~[str]) {
               some(won) { "You won!" }
               some(cont) { fail }
             };
-            out.write_line(#fmt("*** %s -- Score: %?", msg,
+            out.write_line(#fmt("*** %s\nScore: %?", msg,
                                 state.score(res)));
             break;
         }
