@@ -17,9 +17,14 @@ fn get_map(-fh: reader) -> state {
     state::parse(lines)
 }
 
+enum msg {
+    get_cmd(str),
+    final
+}
+
 impl posn for posn {
-    fn show(out: io::writer, extra: str) {
-        out.write_str("\x1b[2J\x1b[H");
+    fn show(out: io::writer, msg: msg) {
+        out.write_str("\x1b[?25l\x1b[2J\x1b[H");
         let lines = self.state.print();
         for lines.each |line| { out.write_line(line); }
         out.write_str("\n"+alt self.res {
@@ -29,10 +34,22 @@ impl posn for posn {
         }+#fmt("\x1b[1mScore: %? \x1b[0m  Time: %?   Lambdas: %?/%?\n",
                self.state.score(alt self.res { cont { none } r { some(r) } }),
                self.state.time, self.state.lgot, self.state.lamb));
-        let cx = (self.state.rloc.x as uint) + 1;
-        let cy = lines.len() - (self.state.rloc.y as uint);
-        out.write_str(extra + #fmt("\x1b7\x1b[%u;%uH", cy, cx));
+        alt msg {
+          get_cmd(text) {
+            let cx = (self.state.rloc.x as uint) + 1;
+            let cy = lines.len() - (self.state.rloc.y as uint);
+            out.write_str(text + #fmt("\x1b7\x1b[%u;%uH\x1b[?25h", cy, cx));
+          }
+          final {
+            out.write_str("\x1b[?25h");
+          }
+        }
         out.flush();
+    }
+    fn getc(in: io::reader, out: io::writer, text: str) -> char {
+        out.write_str("\x1b[?25l\x1b8\x1b[1K\x0d" + text);
+        out.flush();
+        in.read_char()
     }
     fn each_cmd(f: fn(cmd) -> bool) {
         alt self.last {
@@ -75,10 +92,10 @@ fn main(argv: ~[str]) {
         let undop = here.last != initial;
         let movep = here.res == cont;
         let travp = marks.size() > 0;
-        here.show(out, #fmt("Commands: %s%s%smq", 
-                            if movep { "hjkl." } else { "" },
-                            if undop { "-" } else { "" },
-                            if travp { "'" } else { "" }));
+        here.show(out, get_cmd(#fmt("Commands: %s%s%smq", 
+                                    if movep { "hjkl." } else { "" },
+                                    if undop { "-" } else { "" },
+                                    if travp { "'" } else { "" })));
         let mut cmd;
         alt in.read_char() {
           'h' if movep { cmd = move(left) }
@@ -87,21 +104,16 @@ fn main(argv: ~[str]) {
           'l' if movep { cmd = move(right) }
           '.' if movep { cmd = wait }
           '-' if undop { here = here.tail(); again }
-          'm' { 
-            out.write_str("\x1b8\x1b[1K\x0dEnter mark.");
-            out.flush();
-            let m = in.read_char() as int;
-            marks.insert(m, here);
+          'm' {
+            marks.insert(here.getc(in, out, "Enter mark.") as int, here);
             again
           }
           '\'' if travp {
-            out.write_str("\x1b8\x1b[1K\x0dMarks: " + markstr());
-            out.flush();
-            let m = in.read_char() as int;
-            alt marks.find(m) {
-              none { out.write_char('\x07'); again }
-              some(there) { here = there; again }
+            alt marks.find(here.getc(in, out, "Marks: " + markstr()) as int) {
+              none { out.write_char('\x07') }
+              some(there) { here = there }
             }
+            again
           }
           'q' { break }
           _ { out.write_char('\x07'); again }
@@ -109,7 +121,7 @@ fn main(argv: ~[str]) {
         let (res, state) = here.state.step(cmd);
         here = @{ state: state, res: res, last: from(cmd, here) };
     }
-    out.write_str("\x1b8\n");
+    here.show(out, final);
     out.write_line(here.to_str());
     termstuff::game_mode(false);
 }
