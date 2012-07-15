@@ -26,11 +26,32 @@ fn main(argv: ~[str]) {
     let (shell, pos0) = botshell::start(get_map(io::stdin()));
     let mut bag = ~[mut pos0];
     let cmds = ~[move(left), move(right), move(up), move(down), wait];
+    let weights = vec::to_mut(vec::from_elem(cmds.len(), 0));
     loop {
-        let pos = bag[rng.gen_uint_range(0, bag.len())];
+        let chosen = rng.gen_uint_range(0, bag.len());
+        let pos = bag[chosen];
         assert(pos.result == cont);
-        let cmd = rng.choose(cmds);
-        alt shell.step(pos, cmd) {
+        let mut tl = 0;
+        for uint::range(0, cmds.len()) |i| {
+            let weight = if pos.state.useful(cmds[i]) { 1 } else { 0 };
+            weights[i] = weight;
+            tl += weight;
+        }
+        if tl == 0 { 
+            bag[chosen] = bag[0];
+            again
+        }
+        let mut impulse = rng.gen_uint_range(0, tl);
+        let mut ocmd = none;
+        for cmds.eachi |i,cmd| {
+            if impulse < weights[i] {
+                ocmd = some(cmd);
+                break;
+            } else {
+                impulse -= weights[i];
+            }
+        }
+        alt shell.step(pos, option::get(ocmd)) {
           none { break }
           some(npos) {
             if npos.result == cont {

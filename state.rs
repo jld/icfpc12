@@ -64,6 +64,24 @@ impl state for state {
         ret self.mine.get(airspace) == rock && vec::contains(bonk, airspace);
     }
     fn print() -> ~[str] { print(self) }
+    pure fn useful(cmd: cmd) -> bool {
+        alt cmd {
+          wait { self.rolling > 0 }
+          move(dir) {
+            let rl1 = self.rloc.step(dir);
+            alt self.mine.get(rl1) {
+              empty | earth | open_lift | lambda { true }
+              rock { 
+                alt dir {
+                  left | right { self.mine.get(rl1.step(dir)) == empty }
+                  up | down { false }
+                }
+              }
+              _ { false }
+            }
+          }
+        }
+    }
 }
 
 fn step(state: state, cmd: cmd) -> (result, state) {

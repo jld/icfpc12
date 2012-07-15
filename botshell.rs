@@ -37,7 +37,7 @@ impl stuff for shell {
                         result: res,
                         trail: @cons(cmd, posn.trail)};
             if score > self.hiscore {
-                io::println(#fmt("Score: %?; Trail: %s", score, retv.to_str()));
+                #info("Score: %?; Trail: %s", score, retv.to_str());
                 self.hiscore = score;
                 self.best = copy retv;
             }
