@@ -23,6 +23,9 @@ enum msg {
 }
 
 impl posn for posn {
+    pure fn score() -> state::score {
+        self.state.score(alt self.res { cont { none } r { some(r) } })
+    }
     fn show(out: io::writer, msg: msg) {
         out.write_str("\x1b[?25l\x1b[2J\x1b[H");
         let lines = self.state.print();
@@ -32,8 +35,8 @@ impl posn for posn {
             won { "\x1b[40;33;1mYou win!\n" }
             cont { "" }
         }+#fmt("\x1b[1mScore: %? \x1b[0m  Time: %?   Lambdas: %?/%?\n",
-               self.state.score(alt self.res { cont { none } r { some(r) } }),
-               self.state.time, self.state.lgot, self.state.lamb));
+               self.score(), self.state.time,
+               self.state.lgot, self.state.lamb));
         alt msg {
           get_cmd(text) {
             let cx = (self.state.rloc.x as uint) + 1;
@@ -82,6 +85,7 @@ fn main(argv: ~[str]) {
     let out = io::stdout();
     let state0 = get_map(io::file_reader(argv[1]).get());
     let mut here = @{ state: state0, res: cont, last: initial };
+    let mut best = (0, here);
     let marks = map::int_hash();
     let markstr = || {
         let mut buf = ~[];
@@ -89,6 +93,8 @@ fn main(argv: ~[str]) {
         str::from_chars(sort::merge_sort(char_le, buf))
     };
     loop {
+        let contender = (here.score(), here);
+        if contender > best { best = contender }
         let undop = here.last != initial;
         let movep = here.res == cont;
         let travp = marks.size() > 0;
@@ -121,7 +127,9 @@ fn main(argv: ~[str]) {
         let (res, state) = here.state.step(cmd);
         here = @{ state: state, res: res, last: from(cmd, here) };
     }
-    here.show(out, final);
-    out.write_line(here.to_str());
+    let (hiscore, there) = best;
+    there.show(out, final);
+    out.write_line(#fmt("High score: %?", hiscore));
+    out.write_line(there.to_str());
     termstuff::game_mode(false);
 }
