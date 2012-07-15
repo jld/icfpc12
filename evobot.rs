@@ -28,16 +28,35 @@ impl extensions for rand::rng {
     }
 }
 
+const scale_max : float = 1048576.;
 impl stuff for pool {
+    pure fn len() -> uint { self.sacs.len() }
+    pure fn scale() -> float { self.vol / (self.len() as float) }
+
+    fn rescale() {
+        let scale = self.scale();
+        //#info("Rescaling from %?", scale);
+        let mut tl = 0.;
+        for uint::range(0, self.len()) |i| {
+            let vol = self.sacs[i].vol / scale;
+            self.sacs[i] = { vol: vol with self.sacs[i] };
+            tl += vol;
+        }
+        //#info("Should be around %?: %?", self.len(), tl);
+        self.vol = tl;
+    }
+
     fn add(larva: posn, vol: float) {
+        if self.scale() > scale_max { self.rescale(); }
+        let vol = vol * self.scale();
         self.vol += vol - self.sacs[0].vol;
         self.sacs[0] = { vol: vol, larva: larva };
         self.bubble(0);
     }
     fn bubble(i: uint) {
-        if lch(i) >= self.sacs.len() { ret; }
+        if lch(i) >= self.len() { ret; }
         let next;
-        if rch(i) >= self.sacs.len()
+        if rch(i) >= self.len()
             || self.sacs[lch(i)].vol < self.sacs[rch(i)].vol {
             next = lch(i);
         } else {
@@ -50,7 +69,7 @@ impl stuff for pool {
     }
     fn select(rng: rand::rng) -> larva {
         let mut chosen = rng.gen_float_fast() * self.vol;
-        for uint::range(0, self.sacs.len()) |i| {
+        for uint::range(0, self.len()) |i| {
             if chosen < self.sacs[i].vol {
                 ret self.sacs[i].larva;
             }
