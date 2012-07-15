@@ -3,15 +3,16 @@ RUSTC=rustc
 
 STUFF=state.rs mine.rs geom.rs
 
+rlrun: libcstuff.a termstuff.rs $(STUFF)
+maprun: $(STUFF)
 sigtest: libcstuff.a
-maprun: maprun.rs $(STUFF)
 
-%: %.rc
+%: %.rc %.rs
 	$(RUSTC) -L . $<
 
 libcstuff.a: cstuff.o
 	$(AR) cru libcstuff.a cstuff.o
 
 cstuff.o: cstuff.c
-	$(CC) -O -c cstuff.c
+	$(CC) -O -Wall -Werror -c cstuff.c
 

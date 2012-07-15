@@ -17,7 +17,6 @@ type state = {
 enum result {
     cont,
     died,
-    aborted,
     won
 }
 
@@ -50,12 +49,12 @@ impl state for state {
     fn step(cmd: cmd) -> (result, state) {
         step(self, cmd)
     }
-    pure fn score(result: result) -> score {
+    pure fn score(result: option<result>) -> score {
         let lgot = self.lgot as score;
         let base = 25 * lgot - (self.time as score);
         alt result {
-          aborted { base + 25 * lgot }
-          won { base + 50 * lgot }
+          none { base + 25 * lgot }
+          some(won) { base + 50 * lgot }
           _ { base }
         }
     }

@@ -13,29 +13,29 @@ fn main(argv: ~[str]) {
         out.write_line("-- ");
         let ch : char;
         let res = if in.eof() {
-            aborted
+            none
         } else if {ch = in.read_char(); ch == 'A'} {
-            aborted
+            none
         } else {
             alt state::cmd_opt_of_char(ch) {
               none { again }
               some(cmd) {
                 let (res,nstate) = state.step(cmd);
                 state = nstate;
-                res
+                some(res)
               }
             }
         };
-        if (res != cont) {
+        if (res != some(cont)) {
             for state.print().each |line| { out.write_line(line); }
             let msg = alt res {
-              cont { fail }
-              died { "YOU DIED." }
-              aborted { "Successfully aborted." }
-              won { "You won!" }
+              none { "Successfully aborted." }
+              some(died) { "YOU DIED." }
+              some(won) { "You won!" }
+              some(cont) { fail }
             };
-            out.write_line(#fmt("*** %s -- Score: %s", msg,
-                                i64::to_str(state.score(res), 10)));
+            out.write_line(#fmt("*** %s -- Score: %?", msg,
+                                state.score(res)));
             break;
         }
     }
