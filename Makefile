@@ -1,5 +1,6 @@
 RANLIB=ranlib
 RUSTC=rustc
+RUSTCFLAGS=-O
 
 STUFF=state.rs mine.rs geom.rs
 
@@ -9,7 +10,7 @@ maprun: $(STUFF)
 sigtest: libcstuff.a
 
 %: %.rc %.rs
-	$(RUSTC) -L . $<
+	$(RUSTC) $(RUSTCFLAGS) -L . $<
 
 libcstuff.a: cstuff.o
 	$(AR) cru libcstuff.a cstuff.o

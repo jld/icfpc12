@@ -11,7 +11,8 @@ type state = {
     time: area,
     lgot: area,
     lamb: area,
-    touched: rect
+    rolling: area,
+    rollrect: rect
 };
 
 enum result {
@@ -103,11 +104,11 @@ fn step(state: state, cmd: cmd) -> (result, state) {
         if moved {
             edits += ~[{ where: nrloc, what: robot },
                        { where: state.rloc, what: empty }];
-            let touched = do vec::foldl(state.touched, edits) |r,e| {
+            let rollrect = do vec::foldl(state.rollrect, edits) |r,e| {
                 r + e.where.box()
             };
             state = {rloc: nrloc, mine: state.mine.edit(edits),
-                     touched: touched with state};
+                     rollrect: rollrect with state};
         }
       }
     }
@@ -115,18 +116,18 @@ fn step(state: state, cmd: cmd) -> (result, state) {
     // 2.3 Map Update
     let mut edits = ~[];
     let mut bonk = ~[];
-    let mut ntouch = state.rloc.box();
+    let mut nrr = state.rloc.box();
     do state.mine.read |img| {
-        let rolling = state.touched.grow(1, 1, 0, 1) * img.box();
-        do rolling.iter |here| {
+        let rollrect = state.rollrect.grow(1, 1, 0, 1) * img.box();
+        do rollrect.iter |here| {
             alt rock_change(img, here) {
               none { }
               some(there) {
                 edits += ~[{ where: here, what: empty },
                            { where: there, what: rock }];
                 bonk += ~[there];
-                ntouch += here.box();
-                ntouch += there.box();
+                nrr += here.box();
+                nrr += there.box();
               }
             }
         }
@@ -143,7 +144,8 @@ fn step(state: state, cmd: cmd) -> (result, state) {
         }
     }
     state = {mine: state.mine.edit(edits),
-             touched: ntouch with state};
+             rolling: bonk.len() as area, rollrect: nrr
+             with state};
     
     // 2.4 Ending Conditions
     if completing {
@@ -165,11 +167,13 @@ fn parse(lines: &[str]) -> state {
     if metalines.len() > 0 { fail }
     let mut rloc = none;
     let mut lamb = 0;
+    let mut rolling = 0;
     do img.iteri |y,line| {
         do line.iteri |x,cell| {
             alt space_show_(cell) {
               robot { rloc = some({x: x as coord, y: y as coord}); }
               lambda { lamb += 1 }
+              rock { rolling += 1 }
               _ { }
             }
         }
@@ -180,7 +184,8 @@ fn parse(lines: &[str]) -> state {
      time: 0,
      lgot: 0,
      lamb: lamb,
-     touched: img.box()}
+     rolling: rolling,
+     rollrect: img.box()}
 }
 
 pure fn cmd_of_char(c: char) -> cmd {
