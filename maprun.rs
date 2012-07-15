@@ -1,5 +1,5 @@
 import io::{reader,reader_util,writer_util};
-import state::{state, cont, died, aborted, won};
+import state::{state, cont, died, won};
 
 fn main(argv: ~[str]) {
     let in = io::stdin();

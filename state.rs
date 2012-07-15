@@ -10,7 +10,7 @@ type state = {
     rloc: point,
     time: area,
     lgot: area,
-    lrem: area,
+    lamb: area,
     touched: rect
 };
 
@@ -81,8 +81,7 @@ fn step(state: state, cmd: cmd) -> (result, state) {
           empty { true }
           earth { true }
           open_lift { completing = true; true }
-          lambda { state = {lgot: state.lgot + 1,
-                            lrem: state.lrem - 1 with state};
+          lambda { state = {lgot: state.lgot + 1 with state};
                   collected = true; true }
           
           rock { 
@@ -132,7 +131,9 @@ fn step(state: state, cmd: cmd) -> (result, state) {
             }
         }
     }
-    if (collected || state.lgot == 0) && state.lrem == 0 {
+    if (collected || state.lamb == 0) && state.lgot == state.lamb {
+        // Note: if state.lamb == 0, best move is immediate abort.
+        // (So worry not about efficiency for that case.)
         do state.mine.read |img| {
             do img.box().iter |here| {
                 if img.get(here) == closed_lift {
@@ -156,22 +157,19 @@ fn step(state: state, cmd: cmd) -> (result, state) {
 
 fn print(state: state) -> ~[str] {
     assert(state.mine.get(state.rloc) == robot);
-    mine::print(state.mine) +
-        ~["", 
-          #fmt("Time %u", state.time as uint),
-          #fmt("Lambdas %u/%u", state.lgot as uint, state.lrem as uint)]
+    mine::print(state.mine)
 }
 
 fn parse(lines: &[str]) -> state {
     let (img, metalines) = mine::parse(lines);
     if metalines.len() > 0 { fail }
     let mut rloc = none;
-    let mut lrem = 0;
+    let mut lamb = 0;
     do img.iteri |y,line| {
         do line.iteri |x,cell| {
             alt space_show_(cell) {
               robot { rloc = some({x: x as coord, y: y as coord}); }
-              lambda { lrem += 1 }
+              lambda { lamb += 1 }
               _ { }
             }
         }
@@ -181,7 +179,7 @@ fn parse(lines: &[str]) -> state {
      rloc: option::get(rloc),
      time: 0,
      lgot: 0,
-     lrem: lrem,
+     lamb: lamb,
      touched: img.box()}
 }
 
