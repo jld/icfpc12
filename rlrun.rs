@@ -46,6 +46,12 @@ impl posn for posn {
         }
         str::from_chars(vec::reversed(chars))
     }
+    fn tail() -> posn {
+        alt self.last {
+          initial { fail }
+          from(_cmd, there) { there }
+        }
+    }
 }
 
 fn main(argv: ~[str]) {
@@ -55,9 +61,11 @@ fn main(argv: ~[str]) {
     let state0 = get_map(io::file_reader(argv[1]).get());
     let mut here = @{ state: state0, res: cont, last: initial };
     loop {
+        let undop = here.last != initial;
         let movep = here.res == cont;
-        here.show(out, #fmt("Commands: %sq", 
-                            if movep { "hjkl." } else { "" }));
+        here.show(out, #fmt("Commands: %s%sq", 
+                            if movep { "hjkl." } else { "" },
+                            if undop { "-" } else { "" }));
         let mut cmd;
         alt in.read_char() {
           'h' if movep { cmd = move(left) }
@@ -65,6 +73,7 @@ fn main(argv: ~[str]) {
           'k' if movep { cmd = move(up) }
           'l' if movep { cmd = move(right) }
           '.' if movep { cmd = wait }
+          '-' if undop { here = here.tail(); again }
           'q' { break }
           _ { out.write_char('\x07'); again }
         }
