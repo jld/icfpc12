@@ -1,0 +1,40 @@
+#!/bin/sh
+set -e -u
+dst=submission.tgz
+bot=$1
+rustlib=$(ldd "$bot" | \
+    while read soname arrow libfile stuff
+    do if [ "$soname" = librustrt.so ]
+	then echo "${libfile%/*}"; break
+	fi
+    done)
+if [ -z "$rustlib" ]
+then echo "Rust libraries not found." >&2; exit 1
+fi
+
+set -x
+t=`mktemp -d`
+git clone . "$t"/src
+
+:> "$t"/PACKAGES
+#cp README.md "$t"/README
+echo '#!/bin/sh' | tee "$t"/install
+tee "$t"/lifter <<EOF
+#!/bin/sh
+LD_LIBRARY_PATH=\\\$ORIGIN/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH
+exec "\$0".real
+EOF
+cp "$bot" "$t"/lifter.real
+chmod +x "$t"/install "$t"/lifter "$t"/lifter.real
+
+mkdir "$t"/lib
+cp "$rustlib"/librustrt* "$t"/lib/
+cp "$rustlib"/libcore-* "$t"/lib/
+cp "$rustlib"/libstd-* "$t"/lib/
+
+( cd "$t" && tar zcf - . ) > "$dst"
+rm -rf "$t"
+set +x
+echo
+echo "$bot => $dst"
