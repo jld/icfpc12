@@ -38,7 +38,8 @@ fn main(argv: ~[str]) {
     let cmds = ~[move(left), move(right), move(up), move(down), wait];
     let weights = vec::to_mut(vec::from_elem(cmds.len(), 0));
     loop {
-        let chosen = rng.gen_uint_range(0, bag.len());
+        let chosen = rng.gen_uint_range(0, bagsize);
+        let chosen = if chosen >= bag.len() { 0 } else { chosen };
         let pos = bag[chosen];
         assert(pos.result == cont);
         let mut tl = 0;
