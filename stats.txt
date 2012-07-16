@@ -37,7 +37,7 @@ data/contest9.map	: 1347  1347  1359  1427  1220  1548
 data/contest10.map	: 1066  1066	 
 data/spec0.map		: 365   365	 
 -----
-** evobot[l:2,ch:5]
+** evobot[2,li:5]
 data/contest5.map	: 1237	1261
 data/contest6.map	: 1130	733 
 data/contest7.map	: 868	867 
@@ -45,3 +45,12 @@ data/contest8.map	: 1041	1146
 data/contest9.map	: 1725	1694
 data/contest10.map	: 1219  1477
 data/spec0.map		: 419	444 
+-----
+** evobot[2,li:5,ch:3]
+data/contest5.map	: 1235	1229
+data/contest6.map	: 1159	1148
+data/contest7.map	: 868	869 
+data/contest8.map	: 1063	1053
+data/contest9.map	: 1663	1642
+data/contest10.map	: 1457  1428
+data/spec0.map		: 385	364 

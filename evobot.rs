@@ -12,7 +12,8 @@ fn get_map(-fh: reader) -> state {
 }
 
 const dfl_baglen : uint = 100;
-const chainmax : uint = 5;
+const linkmax : uint = 5;
+const chainmax : uint = 3;
 
 pure fn opposed(c0: cmd, c1: cmd) -> bool {
     alt (c0,c1) {
@@ -43,49 +44,52 @@ fn main(argv: ~[str]) {
         let chosen = rng.gen_uint_range(0, bagsize);
         let chosen = if chosen >= bag.len() { 0 } else { chosen };
         let mut pos = bag[chosen];
-        let mut replicate = 1;
         for rng.gen_uint_range(1, chainmax + 1).times {
-            assert(pos.outcome == cont);
-            let mut tl = 0;
-            for uint::range(0, cmds.len()) |i| {
-                let cmd = cmds[i];
-                let weight =
-                    if !pos.state.useful(cmd) { 0 } else 
-                    if opposed(cmd, pos.head())
-                    && !pos.state.collected { 1 } else
-                    if cmd == wait { 5 } else 
-                    if cmd == pos.head() { 35 } else { 10 };
-                weights[i] = weight;
-                tl += weight;
-            }
-            if tl == 0 { 
-                bag[chosen] = bag[0];
-                again
-            }
-            let mut impulse = rng.gen_uint_range(0, tl);
-            let mut ocmd = none;
-            for cmds.eachi |i,cmd| {
-                if impulse < weights[i] {
-                    ocmd = some(cmd);
-                    break;
-                } else {
-                    impulse -= weights[i];
+            let mut replicate = 1;
+            for rng.gen_uint_range(1, linkmax + 1).times {
+                assert(pos.outcome == cont);
+                let mut tl = 0;
+                for uint::range(0, cmds.len()) |i| {
+                    let cmd = cmds[i];
+                    let weight =
+                        if !pos.state.useful(cmd) { 0 } else 
+                        if opposed(cmd, pos.head())
+                        && !pos.state.collected { 1 } else
+                        if cmd == wait { 5 } else 
+                        if cmd == pos.head() { 35 } else { 10 };
+                    weights[i] = weight;
+                    tl += weight;
+                }
+                if tl == 0 { 
+                    bag[chosen] = bag[0];
+                    again
+                }
+                let mut impulse = rng.gen_uint_range(0, tl);
+                let mut ocmd = none;
+                for cmds.eachi |i,cmd| {
+                    if impulse < weights[i] {
+                        ocmd = some(cmd);
+                        break;
+                    } else {
+                        impulse -= weights[i];
+                    }
+                }
+                pos = alt shell.step(pos, option::get(ocmd)) {
+                  err(_) { ret }
+                  ok(npos) {
+                    if npos.outcome != cont { replicate = 0; break }
+                    if npos.state.collected { replicate += 1; }
+                    npos
+                  }
                 }
             }
-            pos = alt shell.step(pos, option::get(ocmd)) {
-              err(_) { ret }
-              ok(npos) {
-                if npos.outcome != cont { replicate = 0; break }
-                if npos.state.collected { replicate += 1; }
-                npos
-              }
-            }
-        }
-        for replicate.times {
-            if bag.len() - 1 < bagsize {
-                bag += ~[pos];
-            } else {
-                bag[rng.gen_uint_range(1, bag.len())] = pos;
+            if replicate == 0 { break }
+            for replicate.times {
+                if bag.len() - 1 < bagsize {
+                    bag += ~[pos];
+                } else {
+                    bag[rng.gen_uint_range(1, bag.len())] = pos;
+                }
             }
         }
     }
