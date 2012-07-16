@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e -u
+limit=$1
+bot=$2
+shift 2
+nl="
+"
+RUST_LOG=${bot##*/}
+export RUST_LOG
+
+report=""
+for map in "$@"
+do soln=$(perl -e "alarm($limit); exec @ARGV" "$bot" < "$map")
+   score=$(echo $soln | ./maprun "$map" | tail -1 | cut -d\  -f2)
+   report="$report$map: $score$nl"
+   echo "-- "
+done
+echo "$report"
