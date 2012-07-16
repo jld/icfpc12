@@ -220,6 +220,9 @@ fn parse(lines: &[str]) -> state {
           "water" { water = (int::from_str(words[1]).get() - 1) as coord }
           "flooding" { flood = int::from_str(words[1]).get() as area }
           "waterproof" { wproof = int::from_str(words[1]).get() as area }
+          "trampoline" if words[2] == "targets" {
+            // nothing yet
+          }
         }
     }
     
