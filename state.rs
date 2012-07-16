@@ -9,6 +9,7 @@ type state = {
     mine: mine,
     rloc: point,
     time: area,
+    tlim: area,
     lgot: area,
     lamb: area,
     rolling: area,
@@ -19,6 +20,7 @@ type state = {
 enum outcome {
     cont,
     died,
+    toolong,
     won
 }
 
@@ -172,6 +174,8 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
         ret (won, state);
     } else if state.bonkp(bonk) {
         ret (died, state);
+    } else if state.time >= state.tlim {
+        ret (toolong, state);
     } else {
         ret (cont, state);
     }
@@ -202,6 +206,7 @@ fn parse(lines: &[str]) -> state {
     {mine: new_mine(copy img),
      rloc: option::get(rloc),
      time: 0,
+     tlim: img.box().area(),
      lgot: 0,
      lamb: lamb,
      rolling: rolling,

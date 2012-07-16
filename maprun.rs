@@ -1,5 +1,5 @@
 import io::{reader,reader_util,writer_util};
-import state::{state, cont, died, won};
+import state::{state, cont, died, toolong, won};
 
 fn main(argv: ~[str]) {
     let in = io::stdin();
@@ -33,6 +33,7 @@ fn main(argv: ~[str]) {
             let msg = alt res {
               none { "Successfully aborted." }
               some(died) { "YOU DIED." }
+              some(toolong) { "You took too long." }
               some(won) { "You won!" }
               some(cont) { fail }
             };

@@ -1,6 +1,6 @@
 use std;
 import io::{reader,reader_util,writer_util};
-import state::{state, outcome, cont, died, won, cmd, move, wait};
+import state::{state, outcome, cont, died, won, toolong, cmd, move, wait};
 import geom::{left, down, up, right};
 import std::{map, sort};
 import std::map::hashmap;
@@ -31,7 +31,8 @@ impl posn for posn {
         let lines = self.state.print();
         for lines.each |line| { out.write_line(line); }
         out.write_str("\n"+alt self.res {
-            died { "\x1b[47;31;1mYOU ARE DESTROYED.\n" }
+            died { "\x1b[41;37;1mYOU ARE DESTROYED.\n" }
+            toolong { "\x1b[47;31mTurn limit exceeded.\n" }
             won { "\x1b[40;33;1mYou win!\n" }
             cont { "" }
         }+#fmt("\x1b[1mScore: %? \x1b[0m  Time: %?   Lambdas: %?/%?\n",
