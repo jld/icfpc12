@@ -1,0 +1,60 @@
+Celestial Dire Badger is:
+Jed Davis <jld@panix.com>
+
+The strategy here is essentially a glorified random walk.  The world
+step function is applicative, by way of the RCS-like difference list
+graph structure in mine.rs (which was a learning experience in Rust to
+get past the language statics); taking advantage of this, the program
+maintains a collection of world states and repeats randomly picking
+one, extending it, and replacing a random member of the collection
+with it.
+
+More specifically: randbot is an unenlightened implementation of this,
+although it does have some tweaks to favor moving in the same
+direction and disfavor reversing, relative to the previous move.  It
+does surprisingly well despite that.  The more advanced version, and
+the current submission, is evobot, which attempts to take a more
+evolutionary approach by granting extra replications to states which
+have found lambdas.  (Various other incentives -- moving rocks
+directly or indirectly, and exploring parts of the map not recently
+touched, have been tried and found to be counterproductive.  It is
+difficult to describe the feeling of watching the 'R' knock the
+falling rock out of the way in midair on contest5.map, and then
+proceed to go and push the other rock onto the lift it just saved.)
+It also has a few adjustments in terms of not replicating every turn
+and not switching to another state every replication, which were a
+modest improvement.  (And ignore weightbot; it was an abortive
+experiment with a fancier "natural selection" approach, which wasn't
+going to work without a bunch of complicatedness I didn't want to to
+try to write.)
+
+The code in botshell.rs handles the interface with the world:
+collecting states and retaining the highest-scoring one encountered
+(and a trace of how to get there), checking for signals (via a C shim,
+because Rust doesn't seem to have an interface and I can't blame the
+people working on it for not wanting to touch that without some
+serious thought), and arranging to respond to the out-of-time signal
+by writing the best trace and exiting cleanly.
+
+There are also two simulator frontends.  The simpler is maprun, which
+takes a route on standard input and a map file on the command line,
+and prints out each state (currently missing some of the metadata) and
+the end result.  It can be used interactively by putting the terminal
+into non-canonical non-echoing mode (e.g. `stty cbreak -echo`, but be
+careful with this if your shell doesn't reset the terminal flags
+before prompting for input the way zsh does), or if piped into a pager
+in a terminal of the correct height used as a sort of rudimentary
+flipbook for perusing a generated route.
+
+The fancy way to interact with the game is rlrun, a roguelike-like
+interface which emits VT/ANSI-style terminal escapes (xterm works).
+It accepts the vi keys for motion, '-' for undo, and vi-style 'm' and
+"'" to set and jump to marks -- which in this case are not cursor
+positions but world states.  When quitting, it shows the best state
+reached and prints the route to it.  It's sort of like being a
+time-travelling robot in a complicated alternate universe plot.
+
+A final word on the world simulation, in case it breaks when I least
+expect it: the map update is limited to what is hopefully a
+conservative approximation of the area that could be affected by robot
+movement or by rocks in motion during the last timestep.

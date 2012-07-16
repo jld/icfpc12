@@ -17,7 +17,7 @@ t=`mktemp -d`
 git clone . "$t"/src
 
 :> "$t"/PACKAGES
-#cp README.md "$t"/README
+cp README "$t"/README
 echo '#!/bin/sh' | tee "$t"/install
 tee "$t"/lifter <<EOF
 #!/bin/sh
