@@ -29,7 +29,7 @@ pure fn opposed(c0: cmd, c1: cmd) -> bool {
 fn main(argv: ~[str]) {
     let bagsize = if argv.len() > 1 { 
         option::get(uint::from_str(argv[1]))
-    } else { 
+    } else {
         dfl_baglen
     };
     let rng = if argv.len() > 2 {
