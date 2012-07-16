@@ -1,6 +1,6 @@
 use std;
 import io::{reader,reader_util,writer_util};
-import state::{state, outcome, cont, died, won, cmd, move, wait};
+import state::{state, outcome, cont, died, won, cmd, move, wait, shave};
 import geom::{left, down, up, right};
 import botshell::stuff;
 import result::{result, ok, err};
@@ -36,7 +36,7 @@ fn main(argv: ~[str]) {
     };
     let (shell, pos0) = botshell::start(get_map(io::stdin()));
     let mut bag = ~[mut pos0];
-    let cmds = ~[move(left), move(right), move(up), move(down), wait];
+    let cmds = ~[move(left), move(right), move(up), move(down), wait, shave];
     let weights = vec::to_mut(vec::from_elem(cmds.len(), 0));
     loop {
         let chosen = rng.gen_uint_range(0, bagsize);
@@ -49,7 +49,8 @@ fn main(argv: ~[str]) {
             let weight =
                 if !pos.state.useful(cmd) { 0 } else 
                 if opposed(cmd, pos.head()) && !pos.state.collected { 1 } else
-                if cmd == wait { 5 } else 
+                if cmd == wait { 5 } else
+                if cmd == shave { 85 } else
                 if cmd == pos.head() { 35 } else { 10 };
             weights[i] = weight;
             tl += weight;

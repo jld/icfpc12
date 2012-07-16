@@ -1,6 +1,6 @@
 use std;
 import io::{reader,reader_util,writer_util};
-import state::{state, outcome, cont, died, won, cmd, move, wait};
+import state::{state, outcome, cont, died, won, cmd, move, wait, shave};
 import mine::{lambda, geom};
 import geom::{left, down, up, right, geom};
 import botshell::stuff;
@@ -39,7 +39,7 @@ fn main(argv: ~[str]) {
     };
     let (shell, pos0) = botshell::start(get_map(io::stdin()));
     let mut bag = ~[mut pos0];
-    let cmds = ~[move(left), move(right), move(up), move(down), wait];
+    let cmds = ~[move(left), move(right), move(up), move(down), wait, shave];
     let weights = vec::to_mut(vec::from_elem(cmds.len(), 0));
     loop {
         let chosen = rng.gen_uint_range(0, bagsize);
@@ -57,6 +57,7 @@ fn main(argv: ~[str]) {
                         if opposed(cmd, pos.head())
                         && !pos.state.collected { 1 } else
                         if cmd == wait { 5 } else 
+                        if cmd == shave { 85 } else 
                         if cmd == pos.head() { 35 } else { 10 };
                     let weight = alt cmd {
                       move(dir) if pos.state.mine.get(pos.state.rloc.step(dir)) == lambda { weight * 9 } 
