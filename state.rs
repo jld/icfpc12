@@ -83,7 +83,7 @@ impl state for state {
           move(dir) {
             let rl1 = self.rloc.step(dir);
             alt self.mine.get(rl1) {
-              empty | earth | open_lift | lambda { true }
+              empty | earth | open_lift | lambda | tramp(_) { true }
               rock { 
                 alt dir {
                   left | right { self.mine.get(rl1.step(dir)) == empty }
