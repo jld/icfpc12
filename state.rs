@@ -9,12 +9,18 @@ type state = {
     mine: mine,
     rloc: point,
     time: area,
-    tlim: area,
     lgot: area,
     lamb: area,
+    water: coord,
     rolling: area,
     rollrect: rect,
-    collected: bool
+    collected: bool,
+    env: env,
+};
+type env = {
+    tlim: area,
+    flood: area,
+    wproof: area
 };
 
 enum outcome {
@@ -174,7 +180,7 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
         ret (won, state);
     } else if state.bonkp(bonk) {
         ret (died, state);
-    } else if state.time >= state.tlim {
+    } else if state.time >= state.env.tlim {
         ret (toolong, state);
     } else {
         ret (cont, state);
@@ -188,7 +194,9 @@ fn print(state: state) -> ~[str] {
 
 fn parse(lines: &[str]) -> state {
     let (img, metalines) = mine::parse(lines);
-    if metalines.len() > 0 { fail }
+    let mut water = 0;
+    let mut flood = 0;
+    let mut wproof = 10;
     let mut rloc = none;
     let mut lamb = 0;
     let mut rolling = 0;
@@ -202,16 +210,30 @@ fn parse(lines: &[str]) -> state {
             }
         }
     }
+    for metalines.each |line| {
+        log(debug, line);
+        if line == "" { again } // Sigh.
+        let words = str::split_nonempty(line, char::is_whitespace);
+        alt check words[0].to_lower() {
+          "water" { water = int::from_str(words[1]).get() as coord }
+          "flooding" { flood = int::from_str(words[1]).get() as area }
+          "waterproof" { wproof = int::from_str(words[1]).get() as area }
+        }
+    }
+    
 
     {mine: new_mine(copy img),
      rloc: option::get(rloc),
      time: 0,
-     tlim: img.box().area(),
      lgot: 0,
      lamb: lamb,
+     water: water,
      rolling: rolling,
      rollrect: img.box(),
-     collected: false}
+     collected: false,
+     env: {tlim: img.box().area(),
+           flood: flood,
+           wproof: wproof}}
 }
 
 pure fn cmd_of_char(c: char) -> cmd {
