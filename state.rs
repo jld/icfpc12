@@ -76,7 +76,11 @@ impl state for state {
     }
     pure fn bonkp(bonk: &[point]) -> bool {
         let airspace = self.rloc.step(up);
-        ret self.mine.get(airspace).is_rock() && vec::contains(bonk, airspace);
+        let painful = alt self.mine.get(airspace) {
+          rock | horock | lambda { true }
+          _ { false }
+        };
+        ret painful && vec::contains(bonk, airspace);
     }
     fn print() -> ~[str] { print(self) }
     pure fn useful(cmd: cmd) -> bool {
@@ -208,8 +212,12 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
                 }
               }
               some(there) {
+                let payload = alt check img.get(here) {
+                  horock if img.get(there.step(down)) != empty { lambda }
+                  whatever { whatever }
+                };
                 edits += ~[{ where: here, what: empty },
-                           { where: there, what: img.get(here) }];
+                           { where: there, what: payload }];
                 bonk += ~[there];
                 nrr += here.box();
                 nrr += there.box();
