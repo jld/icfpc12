@@ -23,6 +23,7 @@ fn parse(lines: &[str]) -> (mine_image, &[str]) {
     let mut metaline = 0;
     
     for lines.eachi |i, line| {
+        let line = str::trim_right(copy line); // XXX \r
         metaline = i + 1;
         if line == "" { break; }
         maxlen = uint::max(maxlen, line.len());
