@@ -22,8 +22,9 @@ type state_const = {
     lamb: area,
     flood: area,
     wproof: area,
-    tramps: ~[u8],
-    targets: ~[point],
+    trampmap: ~[u8],
+    tramploc: ~[point],
+    targetloc: ~[point],
 };
 
 enum outcome {
@@ -107,7 +108,7 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
       wait { }
       move(d) {
         let mut edits = ~[];
-        let nrloc = state.rloc.step(d);
+        let mut nrloc = state.rloc.step(d);
         let moved = alt state.mine.get(nrloc) {
           empty { true }
           earth { true }
@@ -128,6 +129,17 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
               }
               _ { false }
             }
+          }
+          tramp(x) {
+            let y = state.c.trampmap[x];
+            assert(y < 16);
+            nrloc = state.c.targetloc[y];
+            for uint::range(0,15) |xx| {
+                if state.c.trampmap[xx] == y {
+                    edits += ~[{ where: state.c.tramploc[xx], what: empty }];
+                }
+            }
+            true
           }
           _ { false }
         };
@@ -207,8 +219,9 @@ fn parse(lines: &[str]) -> state {
     let mut rloc = none;
     let mut lamb = 0;
     let mut rolling = 0;
-    let tramps = vec::to_mut(vec::from_elem(16, 16));
-    let targets = vec::to_mut(vec::from_elem(16, { x: -1, y: -1 }));
+    let trampmap = vec::to_mut(vec::from_elem(16, 16));
+    let tramploc = vec::to_mut(vec::from_elem(16, { x: -1, y: -1 }));
+    let targetloc = vec::to_mut(vec::from_elem(16, { x: -1, y: -1 }));
     do img.iteri |y,line| {
         do line.iteri |x,cell| {
             let here = {x: x as coord, y: y as coord};
@@ -216,7 +229,8 @@ fn parse(lines: &[str]) -> state {
               robot { rloc = some(here) }
               lambda { lamb += 1 }
               rock { rolling += 1 }
-              target(x) { targets[x] = here; }
+              tramp(x) { tramploc[x] = here; }
+              target(y) { targetloc[y] = here; }
               _ { }
             }
         }
@@ -230,10 +244,10 @@ fn parse(lines: &[str]) -> state {
           "flooding" { flood = int::from_str(words[1]).get() as area }
           "waterproof" { wproof = int::from_str(words[1]).get() as area }
           "trampoline" if words[2] == "targets" {
-            tramps[alt check 
-                   space_of_char(str::char_at(words[1], 0)) { tramp(x) { x }}]
+            trampmap[alt check 
+                     space_of_char(str::char_at(words[1], 0)) { tramp(x) { x }}]
                 = alt check 
-                space_of_char(str::char_at(words[3], 0)) { target(x) { x }};
+                space_of_char(str::char_at(words[3], 0)) { target(y) { y }};
           }
         }
     }
@@ -252,8 +266,9 @@ fn parse(lines: &[str]) -> state {
           lamb: lamb,
           flood: flood,
           wproof: wproof,
-          tramps: vec::from_mut(tramps),
-          targets: vec::from_mut(targets)
+          trampmap: vec::from_mut(trampmap),
+          tramploc: vec::from_mut(tramploc),
+          targetloc: vec::from_mut(targetloc)
          }
     }
 }
