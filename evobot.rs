@@ -42,7 +42,7 @@ fn main(argv: ~[str]) {
     let cmds = ~[move(left), move(right), move(up), move(down), wait, shave];
     let weights = vec::to_mut(vec::from_elem(cmds.len(), 0));
     loop {
-        let chosen = rng.gen_uint_range(0, bagsize);
+        let chosen = rng.gen_uint_range(0, bagsize + 1);
         let chosen = if chosen >= bag.len() { 0 } else { chosen };
         let mut pos = bag[chosen];
         for rng.gen_uint_range(1, chainmax + 1).times {
