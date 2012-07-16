@@ -1,7 +1,7 @@
 use std;
 import io::{reader,reader_util,writer_util};
 import state::{state, outcome, cont, died, won, cmd, move, wait, shave};
-import mine::{lambda, razor, geom};
+import mine::{lambda, razor, horock, target, geom};
 import geom::{left, down, up, right, geom};
 import botshell::stuff;
 import result::{result, ok, err};
@@ -89,7 +89,13 @@ fn main(argv: ~[str]) {
                   err(_) { ret }
                   ok(npos) {
                     if npos.outcome != cont { replicate = 0; break }
-                    if npos.state.collected { replicate += 1; }
+                    //if npos.state.lgot == npos.state.c.lamb { replicate += 1 }
+                    alt pos.state.mine.get(npos.state.rloc) {
+                      lambda | razor { replicate += 1 }
+                      horock { replicate += 2 }
+                      target(_) { replicate += 5 }
+                      _ { }
+                    }
                     npos
                   }
                 }
