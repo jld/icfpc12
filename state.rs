@@ -85,7 +85,7 @@ impl state for state {
           move(dir) {
             let rl1 = self.rloc.step(dir);
             alt self.mine.get(rl1) {
-              empty | earth | open_lift | lambda | tramp(_) { true }
+              empty | earth | open_lift | lambda | tramp(_) | razor { true }
               rock { 
                 alt dir {
                   left | right { self.mine.get(rl1.step(dir)) == empty }
@@ -141,6 +141,10 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
                     edits += ~[{ where: state.c.tramploc[xx], what: empty }];
                 }
             }
+            true
+          }
+          razor {
+            state = { razors: state.razors + 1 with state };
             true
           }
           _ { false }
