@@ -4,7 +4,7 @@ import geom::*;
 enum space {
     robot, wall, rock, lambda, 
     closed_lift, open_lift, earth, empty,
-    tramp(u8), target(u8)
+    tramp(u8), target(u8), beard, razor
 }
 
 fn print(mine: mine) -> ~[str] {
@@ -151,6 +151,8 @@ pure fn space_of_char(c: char) -> space {
       ' ' { empty }
       'A' to 'I' { tramp((c as u8) - ('A' as u8) + 1) }
       '1' to '9' { target((c as u8) - ('1' as u8) + 1) }
+      'W' { beard }
+      '!' { razor }
       _ { fail }
     }
 }
@@ -167,6 +169,8 @@ pure fn char_of_space(s: space) -> char {
       empty { ' ' }
       tramp(x) { assert(x - 1 < 9); (x + ('A' as u8) - 1) as char }
       target(x) { assert(x - 1 < 9); (x + ('1' as u8) - 1) as char }
+      beard { 'W' }
+      razor { '!' }
     }
 }
 
@@ -176,6 +180,7 @@ pure fn space_hide_(s : space) -> space_ {
     space_(alt (s) {
         robot { 0 } wall { 1 } rock { 2 } lambda { 3 }
         closed_lift { 4 } open_lift { 5 } earth { 6 } empty { 7 }
+        beard { 8 } razor { 9 }
         tramp(x) { assert(x<16); 64+x }
         target(x) { assert(x<16); 48+x }
     })
@@ -187,6 +192,7 @@ pure fn space_show_(s : space_) -> space {
         alt check *s {
           0 { robot } 1 { wall } 2 { rock } 3 { lambda }
           4 { closed_lift } 5 { open_lift } 6 { earth } 7 { empty }
+          8 { beard } 9 { razor }
         }
       }
       64 { tramp(*s - 64) }

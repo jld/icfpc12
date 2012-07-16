@@ -41,6 +41,7 @@ impl posn for posn {
             won { "\x1b[40;33;1mYou win!\n" }
             cont { "" }
         }+#fmt("\x1b[1mScore:%? \x1b[0mT:%? L:%?/%? %sWd:%?/%?\n",
+               // TODO: show trampoline map
                self.score(), self.state.time,
                self.state.lgot, self.state.c.lamb,
                if self.state.c.flood > 0 {

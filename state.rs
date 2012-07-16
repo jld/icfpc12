@@ -12,6 +12,7 @@ type state = {
     lgot: area,
     wdmg: area,
     water: coord,
+    razors: area,
     rolling: area,
     rollrect: rect,
     collected: bool,
@@ -22,6 +23,7 @@ type state_const = {
     lamb: area,
     flood: area,
     wproof: area,
+    growth: area,
     trampmap: ~[u8],
     tramploc: ~[point],
     targetloc: ~[point],
@@ -219,6 +221,9 @@ fn parse(lines: &[str]) -> state {
     let mut rloc = none;
     let mut lamb = 0;
     let mut rolling = 0;
+    let mut growth = 25;
+    let mut razors = 0;
+    let mut beardp = false;
     let trampmap = vec::to_mut(vec::from_elem(16, 16));
     let tramploc = vec::to_mut(vec::from_elem(16, { x: -1, y: -1 }));
     let targetloc = vec::to_mut(vec::from_elem(16, { x: -1, y: -1 }));
@@ -231,6 +236,7 @@ fn parse(lines: &[str]) -> state {
               rock { rolling += 1 }
               tramp(x) { tramploc[x] = here; }
               target(y) { targetloc[y] = here; }
+              beard { beardp = true; }
               _ { }
             }
         }
@@ -249,6 +255,8 @@ fn parse(lines: &[str]) -> state {
                 = alt check 
                 space_of_char(str::char_at(words[3], 0)) { target(y) { y }};
           }
+          "growth" { growth = int::from_str(words[1]).get() as area }
+          "razors" { razors = int::from_str(words[1]).get() as area }
         }
     }
     
@@ -259,6 +267,7 @@ fn parse(lines: &[str]) -> state {
      lgot: 0,
      wdmg: 0,
      water: water,
+     razors: razors,
      rolling: rolling,
      rollrect: img.box(),
      collected: false,
@@ -266,6 +275,7 @@ fn parse(lines: &[str]) -> state {
           lamb: lamb,
           flood: flood,
           wproof: wproof,
+          growth: if beardp { growth } else { 0 },
           trampmap: vec::from_mut(trampmap),
           tramploc: vec::from_mut(tramploc),
           targetloc: vec::from_mut(targetloc)
