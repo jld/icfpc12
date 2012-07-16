@@ -37,7 +37,7 @@ enum outcome {
 }
 
 pure fn rock_change(img: mine_image, here: point) -> option<point> {
-    if img.get(here) != rock { ret none }
+    if !img.get(here).is_rock() { ret none }
     let hd = here.step(down);
     let hl = here.step(left);
     let hr = here.step(right);
@@ -46,10 +46,10 @@ pure fn rock_change(img: mine_image, here: point) -> option<point> {
 
     if img.get(hd) == empty {
         ret some(hd);
-    } else if img.get(hd) == rock
+    } else if img.get(hd).is_rock()
         && img.get(hr) == empty && img.get(hdr) == empty {
         ret some(hdr);
-    } else if img.get(hd) == rock 
+    } else if img.get(hd).is_rock() 
         // "is not empty or" entailed by "else if"
         && img.get(hl) == empty && img.get(hdl) == empty {
         ret some(hdl);
@@ -76,7 +76,7 @@ impl state for state {
     }
     pure fn bonkp(bonk: &[point]) -> bool {
         let airspace = self.rloc.step(up);
-        ret self.mine.get(airspace) == rock && vec::contains(bonk, airspace);
+        ret self.mine.get(airspace).is_rock() && vec::contains(bonk, airspace);
     }
     fn print() -> ~[str] { print(self) }
     pure fn useful(cmd: cmd) -> bool {
@@ -86,7 +86,7 @@ impl state for state {
             let rl1 = self.rloc.step(dir);
             alt self.mine.get(rl1) {
               empty | earth | open_lift | lambda | tramp(_) | razor { true }
-              rock { 
+              rock | horock { 
                 alt dir {
                   left | right { self.mine.get(rl1.step(dir)) == empty }
                   up | down { false }
@@ -124,19 +124,20 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
       move(d) {
         let mut edits = ~[];
         let mut nrloc = state.rloc.step(d);
-        let moved = alt state.mine.get(nrloc) {
+        let that = state.mine.get(nrloc);
+        let moved = alt that {
           empty { true }
           earth { true }
           open_lift { completing = true; true }
           lambda { state = {lgot: state.lgot + 1 with state};
                   collected = true; true }
           
-          rock { 
+          rock | horock { 
             alt d {
               left | right {
                 let rollto = nrloc.step(d);
                 if state.mine.get(rollto) == empty {
-                    edits += ~[{ where: rollto, what: rock }];
+                    edits += ~[{ where: rollto, what: that }];
                     true
                 } else {
                     false
@@ -208,7 +209,7 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
               }
               some(there) {
                 edits += ~[{ where: here, what: empty },
-                           { where: there, what: rock }];
+                           { where: there, what: img.get(here) }];
                 bonk += ~[there];
                 nrr += here.box();
                 nrr += there.box();
@@ -274,6 +275,7 @@ fn parse(lines: &[str]) -> state {
               robot { rloc = some(here) }
               lambda { lamb += 1 }
               rock { rolling += 1 }
+              horock { lamb += 1; rolling += 1 }
               tramp(x) { tramploc[x] = here; }
               target(y) { targetloc[y] = here; }
               beard { beardp = true; }
