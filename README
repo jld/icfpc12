@@ -7,7 +7,8 @@ graph structure in mine.rs (which was a learning experience in Rust to
 get past the language statics); taking advantage of this, the program
 maintains a collection of world states and repeats randomly picking
 one, extending it, and replacing a random member of the collection
-with it.
+with it.  Elaborations on this strategy perform surprisingly well for
+something so aggressively unenlightened.
 
 More specifically: randbot is an unenlightened implementation of this,
 although it does have some tweaks to favor moving in the same
@@ -21,12 +22,15 @@ touched, have been tried and found to be counterproductive.  It is
 difficult to describe the feeling of watching the 'R' knock the
 falling rock out of the way in midair on contest5.map, and then
 proceed to go and push the other rock onto the lift it just saved.)
-It also has a few adjustments in terms of not replicating every turn
-and not switching to another state every replication, which were a
-modest improvement.  (And ignore weightbot; it was an abortive
-experiment with a fancier "natural selection" approach, which wasn't
-going to work without a bunch of complicatedness I didn't want to to
-try to write.)
+(But, after the last parenthetical was written, a number of
+adjustments for the extension features were added, and seem to be
+pulling something not entirely unlike their weight.)  It also has a
+few adjustments in terms of not replicating every turn and not
+switching to another state every replication, which were a modest
+improvement.  (And ignore weightbot; it was an abortive experiment
+with a fancier "natural selection" approach, which wasn't going to
+work without a bunch of complicatedness I didn't want to to try to
+write.)
 
 The code in botshell.rs handles the interface with the world:
 collecting states and retaining the highest-scoring one encountered
