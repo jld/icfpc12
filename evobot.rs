@@ -89,7 +89,7 @@ fn main(argv: ~[str]) {
                   err(_) { ret }
                   ok(npos) {
                     if npos.outcome != cont { replicate = 0; break }
-                    //if npos.state.lgot == npos.state.c.lamb { replicate += 1 }
+                    if npos.state.lgot == npos.state.c.lamb { replicate += 1 }
                     alt pos.state.mine.get(npos.state.rloc) {
                       lambda | razor { replicate += 1 }
                       horock { replicate += 2 }
