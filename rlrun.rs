@@ -29,15 +29,26 @@ impl posn for posn {
     fn show(out: io::writer, msg: msg) {
         out.write_str("\x1b[?25l\x1b[2J\x1b[H");
         let lines = self.state.print();
-        for lines.each |line| { out.write_line(line); }
-        out.write_str("\n"+alt self.res {
+        let mut y = (lines.len() - 1) as geom::coord;
+        for lines.each |line| {
+            if y == self.state.water { out.write_str("\x1b[34;46m"); }
+            out.write_line(line);
+            y -= 1;
+        }
+        out.write_str("\x1b[0m\n"+alt self.res {
             died { "\x1b[41;37;1mYOU ARE DESTROYED.\n" }
             toolong { "\x1b[47;31mTurn limit exceeded.\n" }
             won { "\x1b[40;33;1mYou win!\n" }
             cont { "" }
-        }+#fmt("\x1b[1mScore: %? \x1b[0m  Time: %?   Lambdas: %?/%?\n",
+        }+#fmt("\x1b[1mScore:%? \x1b[0mT:%? L:%?/%? %sWd:%?/%?\n",
                self.score(), self.state.time,
-               self.state.lgot, self.state.lamb));
+               self.state.lgot, self.state.lamb,
+               if self.state.flood > 0 {
+                   #fmt("Wt:%?/%? ",
+                        self.state.flood - (self.state.time % self.state.flood),
+                        self.state.flood)
+               } else { "" },
+               self.state.wdmg, self.state.wproof));
         alt msg {
           get_cmd(text) {
             let cx = (self.state.rloc.x as uint) + 1;

@@ -9,18 +9,16 @@ type state = {
     mine: mine,
     rloc: point,
     time: area,
+    tlim: area,
     lgot: area,
     lamb: area,
+    wdmg: area,
     water: coord,
+    flood: area,
+    wproof: area,
     rolling: area,
     rollrect: rect,
-    collected: bool,
-    env: env,
-};
-type env = {
-    tlim: area,
-    flood: area,
-    wproof: area
+    collected: bool
 };
 
 enum outcome {
@@ -170,17 +168,21 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
             }
         }
     }
+    let water = state.water + if state.flood > 0 
+        && state.time % state.flood == 0 { 1 } else { 0 };
+    let wdmg = if water >= state.rloc.y { state.wdmg + 1 } else { 0 };
+
     state = {mine: state.mine.edit(edits),
              rolling: bonk.len() as area, rollrect: nrr,
-             collected: collected
+             collected: collected, water: water, wdmg: wdmg,
              with state};
     
     // 2.4 Ending Conditions
     if completing {
         ret (won, state);
-    } else if state.bonkp(bonk) {
+    } else if state.wdmg > state.wproof || state.bonkp(bonk) {
         ret (died, state);
-    } else if state.time >= state.env.tlim {
+    } else if state.time >= state.tlim {
         ret (toolong, state);
     } else {
         ret (cont, state);
@@ -215,7 +217,7 @@ fn parse(lines: &[str]) -> state {
         if line == "" { again } // Sigh.
         let words = str::split_nonempty(line, char::is_whitespace);
         alt check words[0].to_lower() {
-          "water" { water = int::from_str(words[1]).get() as coord }
+          "water" { water = (int::from_str(words[1]).get() - 1) as coord }
           "flooding" { flood = int::from_str(words[1]).get() as area }
           "waterproof" { wproof = int::from_str(words[1]).get() as area }
         }
@@ -225,15 +227,16 @@ fn parse(lines: &[str]) -> state {
     {mine: new_mine(copy img),
      rloc: option::get(rloc),
      time: 0,
+     tlim: img.box().area(),
      lgot: 0,
      lamb: lamb,
+     wdmg: 0,
      water: water,
+     flood: flood,
+     wproof: wproof,
      rolling: rolling,
      rollrect: img.box(),
-     collected: false,
-     env: {tlim: img.box().area(),
-           flood: flood,
-           wproof: wproof}}
+     collected: false}
 }
 
 pure fn cmd_of_char(c: char) -> cmd {
