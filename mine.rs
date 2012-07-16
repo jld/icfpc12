@@ -80,6 +80,7 @@ impl mine for mine {
     }
 
     fn edit(+ch: mine_change) -> mine {
+        if ch.len() == 0 { ret self; }
         let ch_ = do vec::map_consume(ch) |+ww| {
             { where: ww.where, what_: space_hide_(ww.what) }
         };

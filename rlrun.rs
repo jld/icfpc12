@@ -1,6 +1,6 @@
 use std;
 import io::{reader,reader_util,writer_util};
-import state::{state, outcome, cont, died, won, toolong, cmd, move, wait};
+import state::{state, outcome, cont, died, won, toolong, cmd, move, wait, shave};
 import geom::{left, down, up, right};
 import std::{map, sort};
 import std::map::hashmap;
@@ -116,11 +116,13 @@ fn main(argv: ~[str]) {
     loop {
         let contender = (here.score(), here);
         if contender > best { best = contender }
-        let undop = here.last != initial;
         let movep = here.res == cont;
+        let razorp = movep && here.state.razors > 0;
+        let undop = here.last != initial;
         let travp = marks.size() > 0;
-        here.show(out, get_cmd(#fmt("Commands: %s%s%smq", 
+        here.show(out, get_cmd(#fmt("Commands: %s%s%s%smq", 
                                     if movep { "hjkl." } else { "" },
+                                    if razorp { "s" } else { "" },
                                     if undop { "-" } else { "" },
                                     if travp { "'" } else { "" })));
         let mut cmd;
@@ -142,6 +144,7 @@ fn main(argv: ~[str]) {
             }
             again
           }
+          's' if razorp { cmd = shave }
           'q' { break }
           _ { out.write_char('\x07'); again }
         }

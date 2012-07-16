@@ -2,7 +2,7 @@ import option::{option,some,none};
 import geom::*;
 import mine::*;
 
-enum cmd { move(dir), wait }
+enum cmd { move(dir), wait, shave }
 type score = i64;
 
 type state = {
@@ -95,6 +95,19 @@ impl state for state {
               _ { false }
             }
           }
+          shave {
+            if self.razors > 0 {
+                let mut bp = false;
+                unchecked { // As pure as its callback....
+                    for self.rloc.radiating |there| {
+                        if self.mine.get(there) == beard { bp = true; break }
+                    }
+                }
+                bp
+            } else {
+                false
+            }
+          }
         }
     }
 }
@@ -157,6 +170,18 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
             };
             state = {rloc: nrloc, mine: state.mine.edit(edits),
                      rollrect: rollrect with state};
+        }
+      }
+      shave {
+        if state.razors > 0 {
+            let mut edits = ~[];
+            for state.rloc.radiating |there| {
+                if state.mine.get(there) == beard {
+                    edits += ~[{ where: there, what: empty }];
+                }
+            }
+            state = {razors: state.razors - 1,
+                     mine: state.mine.edit(edits) with state};
         }
       }
     }
@@ -309,6 +334,7 @@ pure fn cmd_opt_of_char(c: char) -> option<cmd> {
       'U' { some(move(up)) }
       'D' { some(move(down)) }
       'W' { some(wait) }
+      'S' { some(shave) }
       _ { none }
     }
 }
@@ -320,6 +346,7 @@ pure fn char_of_cmd(c: cmd) -> char {
       move(up) { 'U' }
       move(down) { 'D' }
       wait { 'W' }
+      shave { 'S' }
     }
 }
 
