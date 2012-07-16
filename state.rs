@@ -165,11 +165,22 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
     let mut edits = ~[];
     let mut bonk = ~[];
     let mut nrr = state.rloc.box();
+    let growp = state.c.growth > 0 && state.time % state.c.growth == 0;
     do state.mine.read |img| {
-        let rollrect = state.rollrect.grow(1, 1, 0, 1) * img.box();
+        let rollrect = if growp { img.box () } else {
+            state.rollrect.grow(1, 1, 0, 1) * img.box()
+        };
         do rollrect.iter |here| {
             alt rock_change(img, here) {
-              none { }
+              none { 
+                if growp && img.get(here) == beard {
+                    for here.radiating |there| {
+                        if img.get(there) == empty {
+                            edits += ~[{ where: there, what: beard }]
+                        }
+                    }
+                }
+              }
               some(there) {
                 edits += ~[{ where: here, what: empty },
                            { where: there, what: rock }];

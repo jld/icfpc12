@@ -75,4 +75,14 @@ impl geom for point {
           down  {{ y: self.y - 1 with self }}
         }
     }
+    fn radiating(f: fn(point) -> bool) {
+        if !f({ x: self.x - 1, y: self.y - 1 }) { ret }
+        if !f({ x: self.x - 1, y: self.y - 0 }) { ret }
+        if !f({ x: self.x - 1, y: self.y + 1 }) { ret }
+        if !f({ x: self.x - 0, y: self.y + 1 }) { ret }
+        if !f({ x: self.x + 1, y: self.y + 1 }) { ret }
+        if !f({ x: self.x + 1, y: self.y + 0 }) { ret }
+        if !f({ x: self.x + 1, y: self.y - 1 }) { ret }
+        if !f({ x: self.x + 0, y: self.y - 1 }) { ret }
+    }
 }

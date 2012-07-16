@@ -40,7 +40,7 @@ impl posn for posn {
             toolong { "\x1b[47;31mTurn limit exceeded.\n" }
             won { "\x1b[40;33;1mYou win!\n" }
             cont { "" }
-        }+#fmt("\x1b[1mScore:%? \x1b[0mT:%? L:%?/%? %sWd:%?/%? Rz:%?\n",
+        }+#fmt("\x1b[1mScore:%? \x1b[0mT:%? L:%?/%? %sWd:%?/%? Rz:%?%s\n",
                // TODO: show trampoline map
                self.score(), self.state.time,
                self.state.lgot, self.state.c.lamb,
@@ -51,7 +51,13 @@ impl posn for posn {
                         self.state.c.flood)
                } else { "" },
                self.state.wdmg, self.state.c.wproof,
-               self.state.razors));
+               self.state.razors,
+               if self.state.c.growth > 0 {
+                   #fmt(" Bt:%?/%?",
+                        self.state.c.growth
+                        - (self.state.time % self.state.c.growth),
+                        self.state.c.growth)
+               } else { "" }));
         alt msg {
           get_cmd(text) {
             let cx = (self.state.rloc.x as uint) + 1;
