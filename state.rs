@@ -196,7 +196,7 @@ fn print(state: state) -> ~[str] {
 
 fn parse(lines: &[str]) -> state {
     let (img, metalines) = mine::parse(lines);
-    let mut water = 0;
+    let mut water = -1;
     let mut flood = 0;
     let mut wproof = 10;
     let mut rloc = none;
