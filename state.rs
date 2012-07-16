@@ -9,16 +9,21 @@ type state = {
     mine: mine,
     rloc: point,
     time: area,
-    tlim: area,
     lgot: area,
-    lamb: area,
     wdmg: area,
     water: coord,
-    flood: area,
-    wproof: area,
     rolling: area,
     rollrect: rect,
-    collected: bool
+    collected: bool,
+    c: @state_const
+};
+type state_const = {
+    tlim: area,
+    lamb: area,
+    flood: area,
+    wproof: area,
+    tramps: ~[u8],
+    targets: ~[point],
 };
 
 enum outcome {
@@ -157,8 +162,8 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
             }
         }
     }
-    if (collected || state.lamb == 0) && state.lgot == state.lamb {
-        // Note: if state.lamb == 0, best move is immediate abort.
+    if (collected || state.c.lamb == 0) && state.lgot == state.c.lamb {
+        // Note: if state.c.lamb == 0, best move is immediate abort.
         // (So worry not about efficiency for that case.)
         do state.mine.read |img| {
             do img.box().iter |here| {
@@ -168,8 +173,8 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
             }
         }
     }
-    let water = state.water + if state.flood > 0 
-        && state.time % state.flood == 0 { 1 } else { 0 };
+    let water = state.water + if state.c.flood > 0 
+        && state.time % state.c.flood == 0 { 1 } else { 0 };
     let wdmg = if water >= state.rloc.y { state.wdmg + 1 } else { 0 };
 
     state = {mine: state.mine.edit(edits),
@@ -180,9 +185,9 @@ fn step(state: state, cmd: cmd) -> (outcome, state) {
     // 2.4 Ending Conditions
     if completing {
         ret (won, state);
-    } else if state.wdmg > state.wproof || state.bonkp(bonk) {
+    } else if state.wdmg > state.c.wproof || state.bonkp(bonk) {
         ret (died, state);
-    } else if state.time >= state.tlim {
+    } else if state.time >= state.c.tlim {
         ret (toolong, state);
     } else {
         ret (cont, state);
@@ -202,12 +207,16 @@ fn parse(lines: &[str]) -> state {
     let mut rloc = none;
     let mut lamb = 0;
     let mut rolling = 0;
+    let tramps = vec::to_mut(vec::from_elem(16, 16));
+    let targets = vec::to_mut(vec::from_elem(16, { x: -1, y: -1 }));
     do img.iteri |y,line| {
         do line.iteri |x,cell| {
+            let here = {x: x as coord, y: y as coord};
             alt space_show_(cell) {
-              robot { rloc = some({x: x as coord, y: y as coord}); }
+              robot { rloc = some(here) }
               lambda { lamb += 1 }
               rock { rolling += 1 }
+              target(x) { targets[x] = here; }
               _ { }
             }
         }
@@ -221,7 +230,10 @@ fn parse(lines: &[str]) -> state {
           "flooding" { flood = int::from_str(words[1]).get() as area }
           "waterproof" { wproof = int::from_str(words[1]).get() as area }
           "trampoline" if words[2] == "targets" {
-            // nothing yet
+            tramps[alt check 
+                   space_of_char(str::char_at(words[1], 0)) { tramp(x) { x }}]
+                = alt check 
+                space_of_char(str::char_at(words[3], 0)) { target(x) { x }};
           }
         }
     }
@@ -230,16 +242,20 @@ fn parse(lines: &[str]) -> state {
     {mine: new_mine(copy img),
      rloc: option::get(rloc),
      time: 0,
-     tlim: img.box().area(),
      lgot: 0,
-     lamb: lamb,
      wdmg: 0,
      water: water,
-     flood: flood,
-     wproof: wproof,
      rolling: rolling,
      rollrect: img.box(),
-     collected: false}
+     collected: false,
+     c: @{tlim: img.box().area(),
+          lamb: lamb,
+          flood: flood,
+          wproof: wproof,
+          tramps: vec::from_mut(tramps),
+          targets: vec::from_mut(targets)
+         }
+    }
 }
 
 pure fn cmd_of_char(c: char) -> cmd {

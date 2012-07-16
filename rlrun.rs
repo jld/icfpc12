@@ -42,13 +42,14 @@ impl posn for posn {
             cont { "" }
         }+#fmt("\x1b[1mScore:%? \x1b[0mT:%? L:%?/%? %sWd:%?/%?\n",
                self.score(), self.state.time,
-               self.state.lgot, self.state.lamb,
-               if self.state.flood > 0 {
+               self.state.lgot, self.state.c.lamb,
+               if self.state.c.flood > 0 {
                    #fmt("Wt:%?/%? ",
-                        self.state.flood - (self.state.time % self.state.flood),
-                        self.state.flood)
+                        self.state.c.flood
+                        - (self.state.time % self.state.c.flood),
+                        self.state.c.flood)
                } else { "" },
-               self.state.wdmg, self.state.wproof));
+               self.state.wdmg, self.state.c.wproof));
         alt msg {
           get_cmd(text) {
             let cx = (self.state.rloc.x as uint) + 1;

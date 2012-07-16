@@ -11,7 +11,7 @@ fn main(argv: ~[str]) {
     loop {
         for state.print().each |line| { out.write_line(line); }
         out.write_line(#fmt("Lambdas: %?/%?   Rolling: %?",
-                            state.lgot, state.lamb, state.rolling));
+                            state.lgot, state.c.lamb, state.rolling));
         out.write_line("-- ");
         let ch : char;
         let res = if in.eof() {
