@@ -36,6 +36,7 @@ fn start(state: state) -> (shell,posn) {
 
 impl stuff for shell {
     fn step(posn: posn, cmd: cmd) -> res<posn> {
+        assert(posn.outcome == cont);
         if sigwrap::get() {
             io::println((copy self.best).to_str());
             err(timeout)
