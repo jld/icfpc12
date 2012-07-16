@@ -163,3 +163,33 @@ aren't inherited.
 
 This all seems like it'd have greediness problems, but whatever.  Such
 is life.
+
+====
+
+SCIENCE: large replication bonuses for lambdas seem to be not helpful.
+Replication bonus for rock pushing is actually counterproductive,
+because of the other rock on contest5.
+
+Want to try a bonus for exploration: if the last thing on your
+position mod (8,8) or something wasn't at that position, then you get
+an extra copy.  Finite space, maybe rewards more than once if the
+first one gets killed, etc.  Might encourage multiple subpopulations
+at locations that alias; not sure how I feel about that.  (Also might
+want an odd number for maze maps, or to jitter the position before
+lookup to break up 1-square hallway aliasing.  Or maybe just don't
+care.)
+
+I'll give up and start implementing the extensions soon; at least then
+I can do mediocrely on all the maps.
+
+More science!  Exploration bonus idea fails.
+
+====
+
+So yeah, doing moves in batches and replicating at the end seems to be
+a good thing.
+
+I can't help the feeling that it's not a quality-of-heuristic thing so
+much as just having more raw speed that way, from not bouncing around
+the difference graph as much.  I guess I could measure, but that might
+make me sad.
