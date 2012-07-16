@@ -115,4 +115,51 @@ In particular, selection pressure should be a win all by itself.
 
 ====
 
+So the weighted collection heap thing is not the best idea; it's slow
+and I'm feeing uninspired to work on heavyweight "mutations" to make
+it maybe work okay.
 
+Now, the original randbot: suppose, when a new state has found a
+lambda, we store it several times.  Behold, selection pressure.  Sort
+of.  And, relatively easy but of uncertain value: run multiple steps
+before writeback.
+
+Consider also: if there's one useful move, overwrite yourself with it
+-- or, if it's death, then bag[0].  Yet further: if there's one useful
+move, then just take it -- loop taking steps until it wasn't 1.  How
+common is this?
+
+Maybe too fancy: treat each thread as a backtracking search with
+random decisions; having 1 forward choice gives you an extra turn;
+having 0 means you undo; having several means you replicate.
+
+Thing I didn't do and should: promote forwards over to the side, and
+undemote reversal after lambda (or other fetch), maybe.  (But also: if
+taking multiple steps per fork, may not want to bias forwards between
+different moves.  So maybe skip that?)
+
+Okay.  Thing that does need to be done is the evolutionarity.
+Generalize it: hitting anything not empty or earth gives a replication
+bonus.  Encourages (or helps explore space after) the stuff in the
+expansions, if I ever implement them.
+
+====
+
+Something that would be neat but I probably won't do: the
+hashed-state-cache search thing that someone whose name I forgot used
+to good effect in 2003.  It's not so useful here because doing
+something wrong doesn't result in immediate death; it just makes you
+wander around lost in a huge state space of pointlessness.  Also I
+don't have anything like a good search heuristic.
+
+It's interesting in that it inherently memoizes the redundant
+computation I'll get when I add in replication.
+
+Although... back up.  Suppose I did hashes instead of random numbers
+for the new slots.  Could even loop over source slots instead of
+selecting randomly (does that change the variance?), but whatever.  To
+"replicate", give the cells utilities that decrement on use, but
+aren't inherited.
+
+This all seems like it'd have greediness problems, but whatever.  Such
+is life.

@@ -48,8 +48,9 @@ fn main(argv: ~[str]) {
             let cmd = cmds[i];
             let weight =
                 if !pos.state.useful(cmd) { 0 } else 
-                if opposed(cmd, pos.head()) { 1 } else
-                if cmd == wait { 5 } else { 10 };
+                if opposed(cmd, pos.head()) && !pos.state.collected { 1 } else
+                if cmd == wait { 5 } else 
+                if cmd == pos.head() { 35 } else { 10 };
             weights[i] = weight;
             tl += weight;
         }
