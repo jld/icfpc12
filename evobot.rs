@@ -1,7 +1,8 @@
 use std;
 import io::{reader,reader_util,writer_util};
 import state::{state, outcome, cont, died, won, cmd, move, wait};
-import geom::{left, down, up, right};
+import mine::{lambda, geom};
+import geom::{left, down, up, right, geom};
 import botshell::stuff;
 import result::{result, ok, err};
 
@@ -57,6 +58,10 @@ fn main(argv: ~[str]) {
                         && !pos.state.collected { 1 } else
                         if cmd == wait { 5 } else 
                         if cmd == pos.head() { 35 } else { 10 };
+                    let weight = alt cmd {
+                      move(dir) if pos.state.mine.get(pos.state.rloc.step(dir)) == lambda { weight * 9 } 
+                      _ { weight }
+                    };
                     weights[i] = weight;
                     tl += weight;
                 }
